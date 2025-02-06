@@ -13,11 +13,6 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-.App-logo {
-  height: 10vmin;
-  padding: 1em;
-  pointer-events: none;
-}
 
 header {
   width: 100vw;
@@ -49,21 +44,36 @@ body {
   min-height: 100vh;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+body {
+  font-family: et-book, Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia, serif;
+}
+
+.content {
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 5%;
+  background-color: #fffff8;
+  /* border: 1px solid red; */
+  color: #111;
+  /* max-width: 1400px; */
+  counter-reset: sidenote-counter;
+  display:grid;
+  gap: 1.5em;
+  grid-template-columns: repeat(auto-fit, minmax(370px, 1fr));
+  grid-auto-rows: 800px;
+  /* overflow:hidden; */
+}
+
+footer {
+  display: flex;
+  flex-direction: column;
+  place-items: center;
 }
 
 .card {
   padding: 2em;
 }
-
-/* #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-} */
 
 button {
   border-radius: 8px;
@@ -95,4 +105,9 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+.timemap {
+  display:flex;
+  flex-direction:column;
 }

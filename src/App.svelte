@@ -1,7 +1,7 @@
 <script>
-  import svelteLogo from './assets/svelte.svg'
+  import timemap from './assets/timemap.png'
+  import Timemap from './lib/Timemap.svelte'
   import Clogo from '/Clogo.svg'
-  import Counter from './lib/Counter.svelte'
   import './assets/tufte.css'
 </script>
 
@@ -14,9 +14,24 @@
   </header>
 
   <div class="content">
-    <h2>TimeMap</h2>
-
+    <div class="timemap">
+      <h2>TimeMap</h2>
+      <Timemap />      
+      <img src={timemap} id="timemapPic" alt="timemap"
+      width=auto height=auto/>
+    </div>
+    <div class="plan">
+      <h2>Historical shoreline plan</h2>
+      <canvas id="planCanvas" width=auto height=auto 
+              style="border:1px solid #000000;">
+      </canvas>
+    </div>
+  
   </div>
+  <footer>
+    <!-- <p>Thanks</p> -->
+    <p>- Xiao</p>
+  </footer>
 </main>
 
 <style>
