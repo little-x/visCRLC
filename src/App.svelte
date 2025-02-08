@@ -1,5 +1,5 @@
 <script>
-  import timemap from './assets/timemap.png'
+  import timemapPic from './assets/timemap.png'
   import Timemap from './lib/Timemap.svelte'
   import Clogo from '/Clogo.svg'
   import './assets/tufte.css'
@@ -16,9 +16,10 @@
   <div class="content">
     <div class="timemap">
       <h2>TimeMap</h2>
-      <Timemap />      
-      <img src={timemap} id="timemapPic" alt="timemap"
+      <img src={timemapPic} id="timemapPic" alt="timemap"
       width=auto height=auto/>
+      <div id="timemapDia"></div>
+      <Timemap />      
     </div>
     <div class="plan">
       <h2>Historical shoreline plan</h2>
