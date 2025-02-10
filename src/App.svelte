@@ -18,7 +18,7 @@
       <h2>TimeMap</h2>
       <img src={timemapPic} id="timemapPic" alt="timemap"
       width=auto height=auto/>
-      <div id="timemapDia"></div>
+      <div class="timemapDia"></div>
       <Timemap />      
     </div>
     <div class="plan">

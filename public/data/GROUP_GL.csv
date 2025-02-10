@@ -1,4 +1,4 @@
-Block code,BLOCK_ID,BLOCK_NAME,GroupNumberInBlock,GroupID,GroupOrder,YEAR,number of samples,Distance from 187x shoreline,Distance from the year on the 187x-side of change vector,YEAR on the 187x-side of change vector,Era number,reference shoreline?,Average Easting,Average Northing,Change Rates (m/yr),IntervalStart,IntervalEnd,Change Vector,ChgRate (m/yr)
+Block code,BLOCK_ID,BLOCK_NAME,GroupNumberInBlock,GroupID,GroupOrder,YEAR,number of samples,Distance from 187x shoreline,Distance from the year on the 187x-side of change vector,YEAR on the 187x-side of change vector,Era number,reference shoreline?,Average Easting,Average Northing,Change Rates (m/yr),IntervalStart,IntervalEnd,Change Vector,ChgRate
 2.08,NaN_HMB,Half-Moon,1,48,only,650,2,-2194,-312.86,1700,2,0,225011.55,179373.85,,,,,
 2.08,NaN_HMB,Half-Moon,1,48,only,1700,10,-1881,-1881.107,1886,3,0,224760.57,179577.55,0.3,,,,
 2.08,NaN_HMB,Half-Moon,1,48,only,1860,12,-1154,-1153.661667,1886,4,0,224764.5583,180458.725,4.5,1700,1886,1881,10.1
