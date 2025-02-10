@@ -28,18 +28,25 @@
       .then(d => {
         let chgData = d.filter(data => 
         data.IntervalStart != "" && data.IntervalStart != null )
-        // console.log(chgData)
+
+        console.log(d => d.IntervalStart)
+
+        let startYear = d3.min(chgData, d => +d.IntervalStart);
+        let endYear = d3.max(chgData, d => +d.IntervalEnd);
+
+        // if (startYear < 1830){
+        //   startYear = 1830
+        // }
 
         let xScale = d3.scaleLinear()
-            .domain([d3.min(chgData, d => +d.IntervalStart),d3.max(chgData, d => +d.IntervalEnd)])
+            .domain([startYear,endYear])
             .range([0,width]);  
             
         let yScale = d3.scaleLinear()
             .domain([d3.min(chgData, d => +d.GroupID),d3.max(chgData, d => +d.GroupID)])
             .range([0,height]);
 
-        // console.log(chgData.map(d => d.GroupID))
-
+        
         let color = d3.scaleLinear()
         .range(["black", "#69b3a2"])
         .domain([d3.min(chgData, d => +d.ChgRate),d3.max(chgData, d => +d.ChgRate)])
@@ -51,8 +58,8 @@
           .attr('x',d => xScale(d.IntervalStart))
           .attr('y',d => yScale(d.GroupID))
           .attr('height',rowHeight)
-          .attr('width',d => (d.IntervalEnd - d.IntervalStart))
-          .attr('fill', d => color(d.ChgRate))
+          .attr('width',d => xScale(d.IntervalEnd - d.IntervalStart + startYear))
+          .attr('fill', d => color(+d.ChgRate))
       })
   })
     
