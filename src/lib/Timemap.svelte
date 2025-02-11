@@ -29,14 +29,22 @@
         let chgData = d.filter(data => 
         data.IntervalStart != "" && data.IntervalStart != null )
 
-        console.log(d => d.IntervalStart)
+        chgData = cleanOverlap(chgData, "GroupID")
+
+        console.log(chgData)
+        // JS array manipulation!
+        // console.log(chgData.map(d => d.IntervalStart));
+        // chgData.forEach(d=> console.log(d.IntervalStart));
+
+        // let chgData2 = d3.flatGroup(chgData)
+        // console.log(chgData2)
 
         let startYear = d3.min(chgData, d => +d.IntervalStart);
         let endYear = d3.max(chgData, d => +d.IntervalEnd);
 
-        // if (startYear < 1830){
-        //   startYear = 1830
-        // }
+        if (startYear < 1850){
+          startYear = 1850
+        }
 
         let xScale = d3.scaleLinear()
             .domain([startYear,endYear])
@@ -46,11 +54,12 @@
             .domain([d3.min(chgData, d => +d.GroupID),d3.max(chgData, d => +d.GroupID)])
             .range([0,height]);
 
-        
+        // color based on coast change rate
         let color = d3.scaleLinear()
-        .range(["black", "#69b3a2"])
+        .range(["red", "#69b3a2"])
         .domain([d3.min(chgData, d => +d.ChgRate),d3.max(chgData, d => +d.ChgRate)])
 
+        // timemap body
         svg.selectAll('rect')
           .data(chgData)
           .enter()
@@ -60,9 +69,38 @@
           .attr('height',rowHeight)
           .attr('width',d => xScale(d.IntervalEnd - d.IntervalStart + startYear))
           .attr('fill', d => color(+d.ChgRate))
+          .attr('stroke','white')
       })
   })
+
+  // delete overlapped interval
+  function cleanOverlap(data, groupBy){
+    let processData = d3.groups(data, d => d[groupBy])
+    let cleanData = [];
     
+    processData.forEach(([GroupID, groups]) => {
+      groups.sort((a,b) => (a.IntervalStart - b.IntervalStart))
+      let curr = groups[0];
+
+      for (let j = 1; j<groups.length; j++){
+        const next = groups[j];
+
+        if (next.IntervalStart >= curr.IntervalEnd){
+          cleanData.push(curr)
+          curr = next
+        } else {
+          curr = {
+            IntervalStart: Math.min(curr.IntervalStart, next.IntervalStart),
+            IntervalEnd: Math.min(curr.IntervalEnd, next.IntervalEnd),
+            ...curr
+          }
+        }
+      }
+      cleanData.push(curr)
+    })
+    return cleanData
+  } 
+
 </script>
 
 <button onclick={increment}>
