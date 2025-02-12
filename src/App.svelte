@@ -3,6 +3,7 @@
   import Timemap from './lib/Timemap.svelte'
   import Clogo from '/Clogo.svg'
   import './assets/tufte.css'
+    import Plan from './lib/Plan.svelte';
 </script>
 
 <main>
@@ -16,16 +17,23 @@
   <div class="content">
     <div class="timemap">
       <h2>TimeMap</h2>
+      <div class="timemapDia">  </div>
+      <Timemap />
       <img src={timemapPic} id="timemapPic" alt="timemap"
-      width=auto height=auto/>
-      <div class="timemapDia"></div>
-      <Timemap />      
+      width=400 height=auto/>
+
     </div>
+
+    <div class="chart">
+      <h2>Change Chart</h2>
+    </div>
+
     <div class="plan">
       <h2>Historical shoreline plan</h2>
       <canvas id="planCanvas" width=auto height=auto 
               style="border:1px solid #000000;">
       </canvas>
+      <Plan />
     </div>
   
   </div>

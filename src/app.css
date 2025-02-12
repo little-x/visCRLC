@@ -50,6 +50,7 @@ body {
 
 .content {
   width: 80%;
+  height:auto;
   margin-left: auto;
   margin-right: auto;
   padding-left: 5%;
@@ -58,7 +59,7 @@ body {
   color: #111;
   /* max-width: 1400px; */
   counter-reset: sidenote-counter;
-  display:grid;
+  display:flex;
   gap: 1.5em;
   grid-template-columns: repeat(auto-fit, minmax(370px, 1fr));
   grid-auto-rows: 800px;
@@ -66,9 +67,12 @@ body {
 }
 
 footer {
-  display: flex;
+  /* position:fixed; */
+  bottom:0;
+  display: block;
   flex-direction: column;
   place-items: center;
+  /* text-align: center; */
 }
 
 .card {

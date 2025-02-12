@@ -7,22 +7,13 @@
       count += 1
   }
 
-  const margin = {top: 80, right: 25, bottom: 30, left: 40},
-  width = 450 - margin.left - margin.right,
-  height = 450 - margin.top - margin.bottom;
+  const margin = {top: 30, right: 25, bottom: 30, left: 40},
+  width = 450 - margin.left - margin.right;
+  const height = 450 - margin.top - margin.bottom;
 
   const rowHeight = 10;
 
   onMount(() =>{
-    let svg = d3.select(".timemapDia")
-      .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-        .attr("transform",
-            "translate(" + margin.left + "," + margin.top + ")")
-      // .attr('fill','black')
-    ;
 
     d3.csv("/data/GROUP_GL.csv")
       .then(d => {
@@ -34,10 +25,9 @@
         console.log(chgData)
         // JS array manipulation!
         // console.log(chgData.map(d => d.IntervalStart));
-        // chgData.forEach(d=> console.log(d.IntervalStart));
 
-        // let chgData2 = d3.flatGroup(chgData)
-        // console.log(chgData2)
+        // const height = rowHeight * chgData.length;
+        // const height = 450 - margin.top - margin.bottom
 
         let startYear = d3.min(chgData, d => +d.IntervalStart);
         let endYear = d3.max(chgData, d => +d.IntervalEnd);
@@ -58,6 +48,14 @@
         let color = d3.scaleLinear()
         .range(["red", "#69b3a2"])
         .domain([d3.min(chgData, d => +d.ChgRate),d3.max(chgData, d => +d.ChgRate)])
+  
+        let svg = d3.select(".timemapDia")
+        .append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+          .attr("transform",
+              "translate(" + margin.left + "," + margin.top + ")")
 
         // timemap body
         svg.selectAll('rect')
