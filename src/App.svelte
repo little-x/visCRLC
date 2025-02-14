@@ -3,7 +3,12 @@
   import Timemap from './lib/Timemap.svelte'
   import Clogo from '/Clogo.svg'
   import './assets/tufte.css'
-    import Plan from './lib/Plan.svelte';
+  import Plan from './lib/Plan.svelte';
+    import Chart from './lib/Chart.svelte';
+
+  const margin = {top: 30, right: 25, bottom: 30, left: 40},
+  width = 450 - margin.left - margin.right;
+
 </script>
 
 <main>
@@ -18,22 +23,19 @@
     <div class="timemap">
       <h2>TimeMap</h2>
       <div class="timemapDia">  </div>
-      <Timemap />
-      <img src={timemapPic} id="timemapPic" alt="timemap"
-      width=400 height=auto/>
+      <Timemap {margin} {width}/>
+      <img src={timemapPic} id="timemapPic" alt="timemap" width=400 height=auto/>
 
     </div>
 
     <div class="chart">
       <h2>Change Chart</h2>
+      <Chart {margin} {width}/>
     </div>
 
     <div class="plan">
       <h2>Historical shoreline plan</h2>
-      <canvas id="planCanvas" width=auto height=auto 
-              style="border:1px solid #000000;">
-      </canvas>
-      <Plan />
+      <Plan {margin} {width}/>
     </div>
   
   </div>

@@ -7,10 +7,8 @@
       count += 1
   }
 
-  const margin = {top: 30, right: 25, bottom: 30, left: 40},
-  width = 450 - margin.left - margin.right;
+  const {margin, width} = $props();
   const height = 450 - margin.top - margin.bottom;
-
   const rowHeight = 10;
 
   onMount(() =>{
@@ -18,21 +16,18 @@
     d3.csv("/data/GROUP_GL.csv")
       .then(d => {
         let chgData = d.filter(data => 
-        data.IntervalStart != "" && data.IntervalStart != null )
+        data.intervalStart != "" && data.intervalStart != null )
 
-        chgData = cleanOverlap(chgData, "GroupID")
+        chgData = cleanOverlap(chgData, "groupID")
 
-        console.log(chgData)
+        // console.log(chgData)
         // JS array manipulation!
-        // console.log(chgData.map(d => d.IntervalStart));
+        // console.log(chgData.map(d => d.intervalStart));
 
-        // const height = rowHeight * chgData.length;
-        // const height = 450 - margin.top - margin.bottom
+        let startYear = d3.min(chgData, d => +d.intervalStart);
+        let endYear = d3.max(chgData, d => +d.intervalEnd);
 
-        let startYear = d3.min(chgData, d => +d.IntervalStart);
-        let endYear = d3.max(chgData, d => +d.IntervalEnd);
-
-        if (startYear < 1850){
+        if (startYear < 1830){
           startYear = 1850
         }
 
@@ -41,13 +36,13 @@
             .range([0,width]);  
             
         let yScale = d3.scaleLinear()
-            .domain([d3.min(chgData, d => +d.GroupID),d3.max(chgData, d => +d.GroupID)])
+            .domain([d3.min(chgData, d => +d.groupID),d3.max(chgData, d => +d.groupID)])
             .range([0,height]);
 
         // color based on coast change rate
         let color = d3.scaleLinear()
         .range(["red", "#69b3a2"])
-        .domain([d3.min(chgData, d => +d.ChgRate),d3.max(chgData, d => +d.ChgRate)])
+        .domain([d3.min(chgData, d => +d.chgRate),d3.max(chgData, d => +d.chgRate)])
   
         let svg = d3.select(".timemapDia")
         .append("svg")
@@ -62,11 +57,11 @@
           .data(chgData)
           .enter()
           .append('rect')
-          .attr('x',d => xScale(d.IntervalStart))
-          .attr('y',d => yScale(d.GroupID))
+          .attr('x',d => xScale(d.intervalStart))
+          .attr('y',d => yScale(d.groupID))
           .attr('height',rowHeight)
-          .attr('width',d => xScale(d.IntervalEnd - d.IntervalStart + startYear))
-          .attr('fill', d => color(+d.ChgRate))
+          .attr('width',d => xScale(d.intervalEnd - d.intervalStart + startYear))
+          .attr('fill', d => color(+d.chgRate))
           .attr('stroke','white')
       })
   })
@@ -76,20 +71,20 @@
     let processData = d3.groups(data, d => d[groupBy])
     let cleanData = [];
     
-    processData.forEach(([GroupID, groups]) => {
-      groups.sort((a,b) => (a.IntervalStart - b.IntervalStart))
+    processData.forEach(([groupID, groups]) => {
+      groups.sort((a,b) => (a.intervalStart - b.intervalStart))
       let curr = groups[0];
 
       for (let j = 1; j<groups.length; j++){
         const next = groups[j];
 
-        if (next.IntervalStart >= curr.IntervalEnd){
+        if (next.intervalStart >= curr.intervalEnd){
           cleanData.push(curr)
           curr = next
         } else {
           curr = {
-            IntervalStart: Math.min(curr.IntervalStart, next.IntervalStart),
-            IntervalEnd: Math.min(curr.IntervalEnd, next.IntervalEnd),
+            intervalStart: Math.min(curr.intervalStart, next.intervalStart),
+            intervalEnd: Math.min(curr.intervalEnd, next.intervalEnd),
             ...curr
           }
         }
