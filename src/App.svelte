@@ -4,7 +4,8 @@
   import Clogo from '/Clogo.svg'
   import './assets/tufte.css'
   import Plan from './lib/Plan.svelte';
-    import Chart from './lib/Chart.svelte';
+  import Chart from './lib/Chart.svelte';
+  import Scene from './lib/Scene.svelte';
 
   const margin = {top: 30, right: 25, bottom: 30, left: 40},
   width = 450 - margin.left - margin.right;
@@ -20,24 +21,26 @@
   </header>
 
   <div class="content">
-    <div class="timemap">
+    <!-- <div class="timemap">
       <h2>TimeMap</h2>
       <div class="timemapDia">  </div>
       <Timemap {margin} {width}/>
       <img src={timemapPic} id="timemapPic" alt="timemap" width=400 height=auto/>
-
-    </div>
+    </div> -->
 
     <div class="chart">
       <h2>Change Chart</h2>
       <Chart {margin} {width}/>
     </div>
 
-    <div class="plan">
+    <!-- <div class="plan">
       <h2>Historical shoreline plan</h2>
       <Plan {margin} {width}/>
-    </div>
+    </div> -->
   
+    <div class="scene">
+      <Scene />
+    </div>
   </div>
   <footer>
     <!-- <p>Thanks</p> -->

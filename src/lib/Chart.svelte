@@ -55,7 +55,7 @@
 
         svg.append('g')
             .call(xAxis)
-            .attr('transform','translate(0,'+(height-margin)+')')
+            .attr('transform','translate(0,0)')
           .append('g')
             .call(yAxis)
             .attr('transform','translate(0)')

@@ -44,6 +44,38 @@
         .range(["red", "#69b3a2"])
         .domain([d3.min(chgData, d => +d.chgRate),d3.max(chgData, d => +d.chgRate)])
   
+        var Tooltip = d3.select(".timemapDia")
+        .append("div")
+        .style("opacity", 0)
+        .attr("class", "tooltip")
+        .style("background-color", "white")
+        .style("border", "solid")
+        .style("border-width", "2px")
+        .style("border-radius", "5px")
+        .style("padding", "5px")
+
+        // Three function that change the tooltip when user hover / move / leave a cell
+        var mouseover = function(d) {
+          Tooltip
+            .style("opacity", 1)
+          d3.select(this)
+            .style("stroke", "black")
+            .style("opacity", 1)
+        }
+        var mousemove = function(event,d) {
+          Tooltip
+            .html("Erosion rate: " + +d.chgRate)
+            .style("left", (d3.pointer(this)[0]+70) + "px")
+            .style("top", (d3.pointer(this)[1]) + "px")
+        }
+        var mouseleave = function(d) {
+          Tooltip
+            .style("opacity", 0)
+          d3.select(this)
+            .style("stroke", "none")
+            .style("opacity", 0.8)
+        }
+
         let svg = d3.select(".timemapDia")
         .append("svg")
           .attr("width", width + margin.left + margin.right)
@@ -57,12 +89,28 @@
           .data(chgData)
           .enter()
           .append('rect')
-          .attr('x',d => xScale(d.intervalStart))
-          .attr('y',d => yScale(d.groupID))
-          .attr('height',rowHeight)
-          .attr('width',d => xScale(d.intervalEnd - d.intervalStart + startYear))
-          .attr('fill', d => color(+d.chgRate))
-          .attr('stroke','white')
+            .attr('x',d => xScale(d.intervalStart))
+            .attr('y',d => yScale(d.groupID))
+            .attr('height',rowHeight)
+            .attr('width',d => xScale(d.intervalEnd - d.intervalStart + startYear))
+            .attr('fill', d => color(+d.chgRate))
+            .attr('stroke','white')
+          .on("mouseover", mouseover)
+          .on("mousemove", mousemove)
+          .on("mouseleave", mouseleave)
+
+          const xAxis = d3.axisTop().scale(xScale).ticks()
+          const yAxis =d3.axisRight().scale(yScale).ticks()
+
+          svg.append('g')
+            .call(xAxis)
+            .attr('transform','translate(0,0)')
+          // .append('g')
+          //   .call(yAxis)
+          //   .attr('transform','translate(0)')
+          .selectAll('text')
+            .attr("transform", "translate(-20,10)rotate(-45)")
+
       })
   })
 
