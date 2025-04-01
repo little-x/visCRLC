@@ -39,7 +39,6 @@ const resize = () => {
 const createScene = (el) => {
   renderer = new THREE.WebGLRenderer({antialias:true, canvas:el});
   renderer.setClearColor(0x87ceeb);
-  console.log('Renderer:', renderer);
 
   resize();
 
@@ -53,25 +52,44 @@ const createScene = (el) => {
   scene.add(ambientLight);
 
   const loader = new GLTFLoader();
-  loader.load('/3d/Avocado.glb', (gltf) => {
-    console.log('Model loaded:', gltf.scene);
+
+  loader.load('/3d/GL_0331.glb', (gltf) => {
+    // console.log('Model loaded:', gltf.scene);
     const model = gltf.scene;
-    model.scale.set(2, 2, 2); // Scale the model to fit the scene
-    model.position.set(0, 0, 0); // Center the model in the scene
+    model.scale.set(.1,.1,.1); // Scale the model to fit the scene
+    model.position.set(0,0,0); // Center the model in the scene
 
     scene.add(model);
 
     // Center the camera on the model
-    const box = new THREE.Box3().setFromObject(model);
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
+    // const box = new THREE.Box3().setFromObject(model);
+    // const center = box.getCenter(new THREE.Vector3());
+    // const size = box.getSize(new THREE.Vector3());
 
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const fov = camera.fov * (Math.PI / 180);
-    const cameraZ = Math.abs(maxDim / Math.sin(fov / 2));
+    // const maxDim = Math.max(size.x, size.y, size.z);
+    // const fov = camera.fov * (Math.PI / 180);
+    // const cameraZ = Math.abs(maxDim / Math.sin(fov / 2));
 
-    camera.position.set(center.x, center.y, cameraZ);
-    camera.lookAt(center);
+    // camera.position.set(center.x, center.y, cameraZ);
+    // camera.lookAt(center);
+
+    // const animate = () => {
+    //   requestAnimationFrame(animate);
+    //   renderer.render(scene, camera);
+    // };
+    // animate();
+    renderer.render(scene, camera);
+
+  }, undefined, (error) => {
+    console.error('An error occurred while loading the model:', error);
+  });
+
+  loader.load('/3d/Avocado.glb', (gltf) => {
+    const av = gltf.scene;
+    av.scale.set(10,10,10); // Scale the model to fit the scene
+    av.position.set(1, 0, 4); // Center the model in the scene
+
+    scene.add(av);
 
     const animate = () => {
       requestAnimationFrame(animate);
@@ -82,13 +100,11 @@ const createScene = (el) => {
   }, undefined, (error) => {
     console.error('An error occurred while loading the model:', error);
   });
-  renderer.render(scene, camera);
 
 }
 
 onMount(() => {
     createScene(el);
-    console.log('el:', el);
 });
 
 </script>
