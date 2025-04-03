@@ -67,6 +67,12 @@ body {
   /* overflow:hidden; */
 }
 
+.scene {
+  /* border: 1px solid red; */
+  width: 900px;
+  height:auto;
+}
+
 footer {
   /* position:fixed; */
   bottom:0;
@@ -91,6 +97,7 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
 button:hover {
   border-color: #646cff;
 }

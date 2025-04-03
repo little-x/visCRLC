@@ -28,10 +28,10 @@
       <img src={timemapPic} id="timemapPic" alt="timemap" width=400 height=auto/>
     </div> -->
 
-    <div class="chart">
+    <!-- <div class="chart">
       <h2>Change Chart</h2>
       <Chart {margin} {width}/>
-    </div>
+    </div> -->
 
     <!-- <div class="plan">
       <h2>Historical shoreline plan</h2>
