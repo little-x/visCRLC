@@ -68,16 +68,16 @@ const processLayers = (model) => {
     shorelineLayers[year] = [];
   });
 
-  // Traverse the shoreline parent to find child layers
-  model.traverse((child) => {
-    if (child.isMesh || child.isGroup) {
+  // Traverse the shoreline parent to find shoreline layers
+  model.traverse((shoreline) => {
+    if (shoreline.isMesh || shoreline.isGroup) {
       // Look for year identifiers in the object name
       years.forEach((year) => {
-        if (child.name.includes(year.toString())) {
-          shorelineLayers[year].push(child);
+        if (shoreline.name.includes(year.toString())) {
+          shorelineLayers[year].push(shoreline);
 
           // Initially hide all layers except the first year
-          child.visible = year === years[2];
+          shoreline.visible = year === years[0];
         }
       });
     }
@@ -148,19 +148,38 @@ const processLayers = (model) => {
     modelFolder.open();
 
     // Shoreline Layer Controls
-    const layerFolder = gui.addFolder('Shoreline Layers');
+    const layerFolder = gui.addFolder('Shoreline Years');
+      
+    // Process the layers first
+    processLayers(model);
+    
+    // Create visibility parameters object
+    const layerVisibility = {};
+    
+    // Set initial values based on current visibility
     years.forEach((year) => {
-      const layer = shorelineLayers[year] || new THREE.Group(); // Create a new group if it doesn't exist
-      shorelineLayers[year] = layer; // Store the layer in the object
-      scene.add(layer); // Add the layer to the scene
-  
-      const params = { visible: true };
-      layerFolder.add(params, 'visible').name(`Show ${year} Layer`)
-        .onChange((value) => {
-          layer.visible = value; // Show or hide the layer based on the checkbox
-        });
+      // Check if the first element in the array exists and is visible
+      const isVisible = shorelineLayers[year].length > 0 && 
+                      shorelineLayers[year][0].visible;
+      
+      layerVisibility[year] = isVisible;
     });
-    layerFolder.open();
+    
+    // Add controls for each year
+    years.forEach((year) => {
+      layerFolder.add(layerVisibility, year.toString())
+        .name(`Year ${year}`)
+        .onChange((visible) => {
+          // Update visibility of all meshes for this year
+          if (shorelineLayers[year]) {
+            shorelineLayers[year].forEach((item) => {
+              item.visible = visible;
+            });
+          }
+        });
+      });
+      
+      layerFolder.open();
   };
   
   // Main initialization function
