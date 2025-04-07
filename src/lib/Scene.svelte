@@ -9,21 +9,25 @@
   // Scene setup variables
   let scene, camera, renderer, controls;
   let model, el;
-  const modelPath = '/3d/GL_0403.glb';
+  const modelPath = '/3d/GL.glb';
   let shorelineLayers = {}; // Object to store shoreline layers by year
   const years = [1870, 1955, 1970, 1999, 2015]; // historic years
-  
+
+  const sceneWidth = window.innerWidth*0.8;
+  const sceneHeight = window.innerHeight*0.8;
+
   // Initialize the scene, camera, renderer and controls
   const initScene = () => {
-    // Handle window resizing
-    window.addEventListener('resize', resize);
-
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 8000);
     camera.position.set(1300, 170, 300);
     
     renderer = new THREE.WebGLRenderer({antialias: true, canvas: el});
-    renderer.setClearColor(0x87ceeb);
+    renderer.setClearColor(0xdff2f5);
+
+    renderer.setSize(sceneWidth, sceneHeight);
+    // Handle window resizing
+    window.addEventListener('resize', resize);
     
     // Add orbit controls for better navigation
     controls = new OrbitControls(camera, renderer.domElement);
@@ -89,12 +93,12 @@ const processLayers = (model) => {
   // Set up scene lighting
   function lighting() {
     // Add a directional light
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // White light, intensity 1
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 3); // White light, intensity 1
     directionalLight.position.set(5, 5, 5); // Position the light
     scene.add(directionalLight);
   
     // Add ambient light for softer lighting
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.5); // Soft white light
+    const ambientLight = new THREE.AmbientLight(0x404040, 1); // Soft white light
     scene.add(ambientLight);
   }
   
@@ -111,8 +115,8 @@ const processLayers = (model) => {
   
   // Handle window resize
   const resize = () => {
-    renderer.setSize(window.innerWidth*0.8, window.innerHeight*0.8);
-    camera.aspect = window.innerWidth / window.innerHeight;
+    renderer.setSize(sceneWidth, sceneHeight);
+    camera.aspect = sceneWidth / sceneHeight;
     camera.updateProjectionMatrix();
   };
   
