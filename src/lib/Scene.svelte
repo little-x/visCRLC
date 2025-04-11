@@ -9,7 +9,7 @@
   // Scene setup variables
   let scene, camera, renderer, controls;
   let model, el;
-  const modelPath = '/3d/GL.glb';
+  const modelPath = import.meta.env.BASE_URL + '3d/GL.glb';
   let shorelineLayers = {}; // Object to store shoreline layers by year
   const years = [1870, 1955, 1970, 1999, 2015]; // historic years
 
