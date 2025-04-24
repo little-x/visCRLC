@@ -12,7 +12,7 @@
   let model, el;
   const modelPath = import.meta.env.BASE_URL + '3d/GL.glb';
   let shorelineLayers = {}; // Object to store shoreline layers by year
-  const years = [1870, 1920, 1955, 1999, 2015]; // historic years
+  const years = [1870, 1920, 1950, 1999, 2015]; // historic years
 
   const sceneWidth = window.innerWidth*0.8;
   const sceneHeight = window.innerHeight*0.8;
@@ -21,7 +21,7 @@
   let changeRatePolygons = {}; // Will store references to polygons
 
   // Red for erosion (negative values), blue for accretion (positive values)
-  const colorScale = d3.scaleSequential(d3.interpolateRdYlBu).domain([-10, 10]);
+  const colorScale = d3.scaleSequential(d3.interpolateRdYlBu).domain([-50, 10]);
 
   // Initialize the scene, camera, renderer and controls
   const initScene = () => {
@@ -83,14 +83,15 @@
 
     // Traverse the shoreline parent to find shoreline layers
     model.traverse((object) => {
-      if (object.isMesh || object.isGroup) {
+      if (object.isMesh || object.isGroup || object.isLine) {
         // Look for year identifiers in the object name
         years.forEach((year) => {
           if (object.name.startsWith(year.toString())) {
             shorelineLayers[year].push(object);
 
             // Initially hide all layers except the first year
-            object.visible = year === years[0];
+            // object.visible = year === years[0]; // Show only the first year by default
+            object.visible = true; // Set all layers to be visible for now
             // console.log(`"${object.name}"`);
           }
         });
@@ -103,7 +104,6 @@
       //     object.material.depthTest = false;
       //   }
       // }
-
     })
 
     // console.log('Processed shoreline layers:', shorelineLayers);
@@ -197,7 +197,7 @@
           };
           
           // Initially hide all change rate polygons
-          object.visible = false;
+          object.visible = true;
         }
       }
     });
@@ -349,7 +349,7 @@
       // Create an object to track the visibility state of each interval
       const intervalVisibility = {};
       intervals.forEach(interval => {
-        intervalVisibility[interval] = false;
+        intervalVisibility[interval] = true; // Default to visible
       });
       
       // Add a control for each interval
@@ -377,8 +377,10 @@
           });
       });
       changeRateFolder.open();
+
+      // createColorLegend();
   };
-  
+
   // Main initialization function
   const init = async () => {
     // Initialize the 3D scene
@@ -413,5 +415,5 @@
   });
   </script>
   
-  <h2>3D Shoreline</h2>
+  <!-- <h2>3D Shoreline</h2> -->
   <canvas bind:this={el}></canvas>

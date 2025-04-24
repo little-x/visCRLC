@@ -6,6 +6,8 @@
   import Plan from './lib/Plan.svelte';
   import Chart from './lib/Chart.svelte';
   import Scene from './lib/Scene.svelte';
+  import ColorLegend from './lib/ColorLegend.svelte';
+
 
   const margin = {top: 30, right: 25, bottom: 30, left: 40},
   width = 450 - margin.left - margin.right;
@@ -40,6 +42,7 @@
   
     <div class="scene">
       <Scene />
+      <ColorLegend />
     </div>
   </div>
   <footer>
