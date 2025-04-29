@@ -7,21 +7,23 @@
   import {onMount} from 'svelte';
   import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
   import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-  import {setupGUI} from './setGUI.js'; // Import the setupGUI function from Control.svelte
-
+  import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+  import {testGUI, addLabels} from './testGUI.js'; // Import the setupGUI function from Control.svelte
+  
+  import Ui from './Ui.svelte';
   
   // Scene setup variables
-  let scene, camera, renderer, controls;
+  let scene, camera, renderer, controls, labelRenderer;
   let model, el;
   const modelPath = import.meta.env.BASE_URL + '3d/GL.glb';
-  let shorelineLayers = {}; // Object to store shoreline layers by year
-  const years = [1870, 1920, 1950, 1999, 2015]; // historic years
+  let shorelines = {}; // Object to store shoreline layers by year
+  const years = [1870, 1920, 1950, 2000, 2015]; // historic years
 
   const sceneWidth = window.innerWidth*0.8;
   const sceneHeight = window.innerHeight*0.8;
 
-  let changeRateData = {}; // Will store parsed CSV data by group and interval
-  let changeRatePolygons = {}; // Will store references to polygons
+  let chgRate = {}; // Store parsed CSV data by group and interval
+  let changeRatePolygons = {}; // Store references to polygons
 
   // Red for erosion (negative values), blue for accretion (positive values)
   const colorScale = d3.scaleSequential(d3.interpolateRdYlBu).domain([-50, 10]);
@@ -30,13 +32,9 @@
   const initScene = () => {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 8000);
-    camera.position.set(-500, 3000, 1000);
-    camera.near = 50;
-    camera.far = 10000;
 
     renderer = new THREE.WebGLRenderer({antialias: true, canvas: el, alpha: true});
     renderer.setClearColor( 0x000000, 0 );
-
     renderer.setSize(sceneWidth, sceneHeight);
     // Handle window resizing
     window.addEventListener('resize', resize);
@@ -45,7 +43,15 @@
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    
+
+    // Create and configure the CSS2DRenderer
+    labelRenderer = new CSS2DRenderer();
+    labelRenderer.setSize(sceneWidth, sceneHeight);
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0';
+    labelRenderer.domElement.style.pointerEvents = 'none'; // Prevent labels from blocking mouse events
+    document.body.appendChild(labelRenderer.domElement);
+
     // Set up lighting
     lighting();
   };
@@ -74,46 +80,8 @@
     });
   };
   
-  // Process model to identify shoreline layers by year
-  const processLayers = (model) => {
-    // Reset the layers object
-    shorelineLayers = {};
-
-    // Initialize with empty arrays for each year
-    years.forEach((year) => {
-      shorelineLayers[year] = [];
-    });
-
-    // Traverse the shoreline parent to find shoreline layers
-    model.traverse((object) => {
-      if (object.isMesh || object.isGroup || object.isLine) {
-        // Look for year identifiers in the object name
-        years.forEach((year) => {
-          if (object.name.startsWith(year.toString())) {
-            shorelineLayers[year].push(object);
-
-            // Initially hide all layers except the first year
-            // object.visible = year === years[0]; // Show only the first year by default
-            object.visible = true; // Set all layers to be visible for now
-            // console.log(`"${object.name}"`);
-          }
-        });
-      }
-
-      // Find all shoreline curve and set them to be highest render order
-      if (object.name.includes("_shoreline")) {
-        object.renderOrder = 100;
-        if (object.material) {
-          object.material.depthTest = false;
-        }
-      }
-    })
-
-    // console.log('Processed shoreline layers:', shorelineLayers);
-  };
-
   // Function to load and parse CSV data
-  const loadChangeRateData = async () => {
+  const loadchgRate = async () => {
     try {
       // Use a dynamic path for the CSV file
       const csvPath = import.meta.env.BASE_URL + 'GROUP_GL.csv';
@@ -138,20 +106,20 @@
         // const changeRate = parseFloat(row['ChgRate (m/yr)']);
 
         // Create nested structure if it doesn't exist
-        if (!changeRateData[groupId]) {
-          changeRateData[groupId] = {};
+        if (!chgRate[groupId]) {
+          chgRate[groupId] = {};
         }
         
         // Store by interval number for easy lookup
-        changeRateData[groupId][intervalNumber] = {
+        chgRate[groupId][intervalNumber] = {
           startYear: startYear,
           endYear: endYear,
           rate: changeRate
         };
       });
       
-      console.log('Parsed change rate data:', changeRateData);
-      return changeRateData;
+      console.log('Parsed change rate data:', chgRate);
+      return chgRate;
     } catch (error) {
       console.error('Error loading change rate data:', error);
       alert('Failed to load change rate data. Please check if the file exists and try again.');
@@ -159,7 +127,44 @@
     }
   };
 
-  // Function to find and categorize change rate polygons in the model
+  // Process model to identify shoreline layers by year
+  const processLayers = (model) => {
+    // Reset the layers object
+    shorelines = {};
+
+    // Initialize with empty arrays for each year
+    years.forEach((year) => {
+      shorelines[year] = [];
+    });
+
+    // Traverse the shoreline parent to find shoreline layers
+    model.traverse((object) => {
+      if (object.isMesh || object.isGroup || object.isLine) {
+        // Look for year identifiers in the object name
+        years.forEach((year) => {
+          if (object.name.startsWith(year.toString())) {
+            shorelines[year].push(object);
+
+            // Initially hide all layers except the first year
+            // object.visible = year === years[0]; // Show only the first year by default
+            object.visible = true; // Set all layers to be visible for now
+            // console.log(`"${object.name}"`);
+          }
+        });
+      }
+
+      // Find all shoreline curve and set them to be highest render order
+      if (object.name.includes("_shoreline")) {
+        object.renderOrder = 100;
+        if (object.material) {
+          object.material.depthTest = false;
+        }
+      }
+    })
+
+    // console.log('Processed shoreline layers:', shorelines);
+  };
+
   const findChangeRatePolygons = (model) => {
     changeRatePolygons = {};
     
@@ -217,8 +222,8 @@
         const polygonInfo = changeRatePolygons[groupId][intervalNumber];
         
         // Get the corresponding change rate data
-        if (changeRateData[groupId] && changeRateData[groupId][intervalNumber]) {
-          const rate = changeRateData[groupId][intervalNumber].rate;
+        if (chgRate[groupId] && chgRate[groupId][intervalNumber]) {
+          const rate = chgRate[groupId][intervalNumber].rate;
           
           // Get the color for this rate
           const color = colorScale(rate);
@@ -243,6 +248,7 @@
     });
   };
 
+
   // Set up scene lighting
   function lighting() {
     // Add a directional light
@@ -265,11 +271,13 @@
     const center = new THREE.Vector3();
     boundingBox.getCenter(center);
     controls.target.copy(center);   // Set the controls target to the center of the model
-    // camera.position.set(center.x, center.y + 100, center.z + 200); // Adjust camera position based on model size
+    camera.position.set(center.x - 500, center.y + 4000, center.z + 2000); // Adjust camera position based on model size
     camera.lookAt(center);
-    // console.log('Model center:', center);
+    camera.near = 100;
+    camera.far = 1000000;
+    console.log('Model center:', center);
   };
-  
+
   // Handle window resize
   const resize = () => {
     renderer.setSize(sceneWidth, sceneHeight);
@@ -282,6 +290,7 @@
     requestAnimationFrame(animate);
     if (controls) controls.update(); // Update controls if they exist
     renderer.render(scene, camera);
+    labelRenderer.render(scene, camera); // Render labels
   };
   
   
@@ -293,11 +302,13 @@
     try {
       const loadedModel = await loadModel();
       
-      await loadChangeRateData();
+      await loadchgRate();
       processLayers(loadedModel); // Process layers after loading the model
       findChangeRatePolygons(loadedModel); // Find and categorize polygons
       applyChangeRateColors(); // Apply colors based on change rates
-      setupGUI(camera, shorelineLayers, years, 
+      addLabels(model,'Tokeland');
+      addLabels(model,'Westport');
+      testGUI(camera, shorelines, years, 
         changeRatePolygons, model); // Set up GUI controls
       animate(); // Start animation loop
     } catch (error) {
@@ -320,3 +331,15 @@
 
   <!-- <h2>3D Shoreline</h2> -->
   <canvas bind:this={el}></canvas>
+  <Ui {years} {shorelines} {changeRatePolygons} {chgRate} />
+
+  <style>
+    :global(.label) {
+      color: white;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-size: 14px;
+      pointer-events: none; /* Prevent labels from blocking mouse events */
+    }
+  </style>
