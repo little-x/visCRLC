@@ -69,12 +69,22 @@
     
     function toggleShoreline(year) {
       if (!shorelines || !shorelines[year]) return;
-      
-      shorelineVisibility[year] = !shorelineVisibility[year];
-      shorelines[year]?.forEach(item => {
-        item.visible = shorelineVisibility[year];
+
+      // Deactivate all other years
+      Object.keys(shorelineVisibility).forEach(y => {
+        shorelineVisibility[y] = false;
+        shorelines[y]?.forEach(item => {
+          item.visible = false;
+        });
       });
-      shorelineVisibility = {...shorelineVisibility}; // Force reactivity
+
+      // Activate the selected year
+      shorelineVisibility[year] = true;
+      shorelines[year]?.forEach(item => {
+        item.visible = true;
+      });
+
+      shorelineVisibility = { ...shorelineVisibility }; // Force reactivity
     }
     
     function toggleChangeRate(interval) {

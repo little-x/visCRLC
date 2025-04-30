@@ -12,7 +12,6 @@
   
   import Ui from './Ui.svelte';
   import ColorLegend from './ColorLegend.svelte';
-
   
   // Scene setup variables
   let scene, camera, renderer, controls, labelRenderer;
@@ -291,6 +290,7 @@
 
     camera.aspect = scene3dWidth / scene3dHeight;
     camera.updateProjectionMatrix();
+
   };
   
   // Animation loop
