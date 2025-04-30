@@ -218,13 +218,6 @@ figure.fullwidth figcaption {
     margin-right: 24%;
 }
 
-a:link,
-a:visited {
-    color: inherit;
-    text-underline-offset: 0.1em;
-    text-decoration-thickness: 0.05em;
-}
-
 /* Sidenotes, margin notes, figures, captions */
 img {
     max-width: 100%;

@@ -11,16 +11,15 @@
   import {testGUI, addLabels} from './testGUI.js'; // Import the setupGUI function from Control.svelte
   
   import Ui from './Ui.svelte';
+  import ColorLegend from './ColorLegend.svelte';
+
   
   // Scene setup variables
   let scene, camera, renderer, controls, labelRenderer;
-  let model, el;
+  let model, el, scene3d; // Reference to the .scene3d element
   const modelPath = import.meta.env.BASE_URL + '3d/GL.glb';
   let shorelines = {}; // Object to store shoreline layers by year
   const years = [1870, 1920, 1950, 2000, 2015]; // historic years
-
-  const sceneWidth = window.innerWidth*0.8;
-  const sceneHeight = window.innerHeight*0.8;
 
   let chgRate = {}; // Store parsed CSV data by group and interval
   let changeRatePolygons = {}; // Store references to polygons
@@ -31,12 +30,12 @@
   // Initialize the scene, camera, renderer and controls
   const initScene = () => {
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 8000);
+    camera = new THREE.PerspectiveCamera(45, 1, 0.1, 8000); // Aspect ratio will be updated later
 
     renderer = new THREE.WebGLRenderer({antialias: true, canvas: el, alpha: true});
     renderer.setClearColor( 0x000000, 0 );
-    renderer.setSize(sceneWidth, sceneHeight);
-    // Handle window resizing
+    
+    // Handle container resizing
     window.addEventListener('resize', resize);
     
     // Add orbit controls for better navigation
@@ -46,14 +45,16 @@
 
     // Create and configure the CSS2DRenderer
     labelRenderer = new CSS2DRenderer();
-    labelRenderer.setSize(sceneWidth, sceneHeight);
     labelRenderer.domElement.style.position = 'absolute';
     labelRenderer.domElement.style.top = '0';
     labelRenderer.domElement.style.pointerEvents = 'none'; // Prevent labels from blocking mouse events
-    document.body.appendChild(labelRenderer.domElement);
+    scene3d.appendChild(labelRenderer.domElement);
 
     // Set up lighting
     lighting();
+
+    // Set initial size and aspect ratio
+    resize();
   };
   
   // Load the 3D model
@@ -118,7 +119,7 @@
         };
       });
       
-      console.log('Parsed change rate data:', chgRate);
+      // console.log('Parsed change rate data:', chgRate);
       return chgRate;
     } catch (error) {
       console.error('Error loading change rate data:', error);
@@ -146,8 +147,8 @@
             shorelines[year].push(object);
 
             // Initially hide all layers except the first year
-            // object.visible = year === years[0]; // Show only the first year by default
-            object.visible = true; // Set all layers to be visible for now
+            object.visible = year === years[0]; // Show only the first year by default
+            // object.visible = true; // Set all layers to be visible for now
             // console.log(`"${object.name}"`);
           }
         });
@@ -193,19 +194,20 @@
           const endYear = endYearMatch[1];
           
           // If we don't have this group in our dictionary yet, create it
-          if (!changeRatePolygons[groupId]) {
-            changeRatePolygons[groupId] = {};
+          if (!changeRatePolygons[intervalNumber]) {
+            changeRatePolygons[intervalNumber] = {};
           }
           
           // Store the object reference
-          changeRatePolygons[groupId][intervalNumber] = {
+          changeRatePolygons[intervalNumber][groupId] = {
             object: object,
             startYear: startYear,
             endYear: endYear
           };
           
-          // Initially hide all change rate polygons
-          object.visible = true;
+          // Show only the first interval by default
+          const isFirstInterval = parseInt(intervalNumber) === 2;
+          object.visible = isFirstInterval;
         }
       }
     });
@@ -215,31 +217,31 @@
 
   // Function to apply colors to polygons based on change rates
   const applyChangeRateColors = () => {
-    // For each group
-    Object.keys(changeRatePolygons).forEach(groupId => {
-      // For each interval in this group
-      Object.keys(changeRatePolygons[groupId]).forEach(intervalNumber => {
-        const polygonInfo = changeRatePolygons[groupId][intervalNumber];
-        
+    // For each interval
+    Object.keys(changeRatePolygons).forEach(intervalNumber => {
+      // For each group in this interval
+      Object.keys(changeRatePolygons[intervalNumber]).forEach(groupId => {
+        const polygonInfo = changeRatePolygons[intervalNumber][groupId];
+
         // Get the corresponding change rate data
         if (chgRate[groupId] && chgRate[groupId][intervalNumber]) {
           const rate = chgRate[groupId][intervalNumber].rate;
-          
+
           // Get the color for this rate
           const color = colorScale(rate);
-          
+
           // Create material with this color
           const material = new THREE.MeshBasicMaterial({
             color: new THREE.Color(color),
-            transparent: true, 
+            transparent: true,
             opacity: 0.7,
             side: THREE.DoubleSide
           });
-          
+
           // Apply to the polygon
           if (polygonInfo.object.isMesh) {
             polygonInfo.object.material = material;
-            
+
             // Store the change rate in the object's userData for tooltips/info
             polygonInfo.object.userData.changeRate = rate;
           }
@@ -247,7 +249,6 @@
       });
     });
   };
-
 
   // Set up scene lighting
   function lighting() {
@@ -271,17 +272,24 @@
     const center = new THREE.Vector3();
     boundingBox.getCenter(center);
     controls.target.copy(center);   // Set the controls target to the center of the model
-    camera.position.set(center.x - 500, center.y + 4000, center.z + 2000); // Adjust camera position based on model size
+    camera.position.set(center.x - 2000, center.y + 3000, center.z + 3000); // Adjust camera position based on model size
     camera.lookAt(center);
-    camera.near = 100;
-    camera.far = 1000000;
+    camera.near = .1;
+    camera.far = 1000;
     console.log('Model center:', center);
   };
 
   // Handle window resize
   const resize = () => {
-    renderer.setSize(sceneWidth, sceneHeight);
-    camera.aspect = sceneWidth / sceneHeight;
+    if (!scene3d) return;
+
+    const scene3dWidth = scene3d.clientWidth;
+    const scene3dHeight = scene3d.clientHeight;
+
+    renderer.setSize(scene3dWidth, scene3dHeight);
+    labelRenderer.setSize(scene3dWidth, scene3dHeight);
+
+    camera.aspect = scene3dWidth / scene3dHeight;
     camera.updateProjectionMatrix();
   };
   
@@ -308,8 +316,8 @@
       applyChangeRateColors(); // Apply colors based on change rates
       addLabels(model,'Tokeland');
       addLabels(model,'Westport');
-      testGUI(camera, shorelines, years, 
-        changeRatePolygons, model); // Set up GUI controls
+      addLabels(model,'North_Cove');
+      // testGUI(camera, shorelines, years, changeRatePolygons, model); // Set up GUI controls
       animate(); // Start animation loop
     } catch (error) {
       console.error('Failed to initialize:', error);
@@ -327,19 +335,46 @@
       if (renderer) renderer.dispose();
     };
   });
-  </script>
+</script>
 
-  <!-- <h2>3D Shoreline</h2> -->
-  <canvas bind:this={el}></canvas>
-  <Ui {years} {shorelines} {changeRatePolygons} {chgRate} />
+<div class="scene3d" bind:this={scene3d}>
+  <canvas class="scene-canvas" bind:this={el}></canvas>
+  <div class="control">
+    <Ui {years} {shorelines} {changeRatePolygons} {chgRate} />
+  </div>
+  <div class="key">
+    <ColorLegend />
+  </div>
+</div>
 
-  <style>
-    :global(.label) {
-      color: white;
-      background-color: rgba(0, 0, 0, 0.7);
-      padding: 2px 5px;
-      border-radius: 3px;
-      font-size: 14px;
-      pointer-events: none; /* Prevent labels from blocking mouse events */
-    }
-  </style>
+<style>
+  :global(.label) {
+    color: white;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 14px;
+    pointer-events: none; /* Prevent labels from blocking mouse events */
+  }
+
+  .scene3d {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    width: 100%; 
+    height: 80vh; 
+    margin: 0 auto; /* Center the container horizontally */
+  }
+
+  .scene-canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  .control {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10; /* Ensure the control is above the scene */
+  }
+</style>

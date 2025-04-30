@@ -27,7 +27,6 @@ export const testGUI = (camera, shorelines, years, changeRatePolygons, model) =>
 
     // Shoreline Layer Controls
     const layerFolder = gui.addFolder('Shoreline Years');
-    // processLayers(model);
     
     // Create visibility parameters object
     const layerVisibility = {};
@@ -61,27 +60,31 @@ export const testGUI = (camera, shorelines, years, changeRatePolygons, model) =>
       const changeRateFolder = gui.addFolder('Shoreline Change Rates');
 
       // Get all unique interval numbers
-      const intervals = new Set();
-      Object.keys(changeRatePolygons).forEach(groupId => {
-        Object.keys(changeRatePolygons[groupId]).forEach(intervalNumber => {
-          intervals.add(intervalNumber);
-        });
-      });
-      
-      // Create an object to track the visibility state of each interval
+      const intervals = Object.keys(changeRatePolygons);
+
+      // Set initial values based on current visibility
       const intervalVisibility = {};
-      intervals.forEach(interval => {
-        intervalVisibility[interval] = true; // Default to visible
+      intervals.forEach((interval) => {
+        let isVisible = false;
+
+        // Check if any group within this interval is visible
+        Object.keys(changeRatePolygons[interval]).forEach(groupId => {
+          if (changeRatePolygons[interval][groupId].object.visible) {
+            isVisible = true;
+          }
+        });
+
+        intervalVisibility[interval] = isVisible;
       });
-      
+
       // Add a control for each interval
-      Array.from(intervals).sort().forEach(interval => {
+      intervals.sort().forEach(interval => {
         // Find an example of this interval to get years for the label
         let startYear = '', endYear = '';
-        for (const groupId in changeRatePolygons) {
-          if (changeRatePolygons[groupId][interval]) {
-            startYear = changeRatePolygons[groupId][interval].startYear;
-            endYear = changeRatePolygons[groupId][interval].endYear;
+        for (const groupId in changeRatePolygons[interval]) {
+          if (changeRatePolygons[interval][groupId]) {
+            startYear = changeRatePolygons[interval][groupId].startYear;
+            endYear = changeRatePolygons[interval][groupId].endYear;
             break;
           }
         }
@@ -91,11 +94,9 @@ export const testGUI = (camera, shorelines, years, changeRatePolygons, model) =>
         changeRateFolder.add(intervalVisibility, interval)
           .name(`${startYear}-${endYear} (Interval ${interval})`)
           .onChange(visible => {
-            // Update visibility for all polygons in this interval
-            Object.keys(changeRatePolygons).forEach(groupId => {
-              if (changeRatePolygons[groupId][interval]) {
-                changeRatePolygons[groupId][interval].object.visible = visible;
-              }
+            // Update visibility for all groups in this interval
+            Object.keys(changeRatePolygons[interval]).forEach(groupId => {
+              changeRatePolygons[interval][groupId].object.visible = visible;
             });
           })
           .listen();
