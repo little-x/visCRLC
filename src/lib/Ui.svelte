@@ -6,12 +6,15 @@
     export let changeRatePolygons;
     export let years;
     export let chgRate; 
+    export let bathymetryObjects; // Add a prop for bathymetry objects
     
     // Store visibility of shoreline years
     let shorelineVisibility = {};
     
     // Store visibility of change rate intervals
     let changeRateVisibility = {};
+    
+    let bathyVisibility = true; // Track bathymetry visibility
     
     // Make this reactive to prop changes
     $: if (years && shorelines) {
@@ -99,6 +102,22 @@
 
       changeRateVisibility = { ...changeRateVisibility }; // Force reactivity
     }
+    
+    function toggleBathymetry() {
+      bathyVisibility = !bathyVisibility;
+      bathymetryObjects?.forEach(obj => {
+        obj.visible = bathyVisibility;
+      });
+    }
+
+    function getIntervalLabel(interval) {
+      const groupIds = Object.keys(changeRatePolygons[interval] || {});
+      if (groupIds.length > 0) {
+        const firstGroup = changeRatePolygons[interval][groupIds[0]];
+        return `${firstGroup.startYear}-${firstGroup.endYear}`;
+      }
+      return `Interval ${interval}`;
+    }
   </script>
   
   <div class="controls-container">
@@ -119,9 +138,18 @@
         <button 
           on:click={() => toggleChangeRate(interval)} 
           class="control-button {changeRateVisibility[interval] ? 'visible' : 'hidden'}">
-          Interval {interval}
+          {getIntervalLabel(interval)}
         </button>
       {/each}
+    </div>
+
+    <div class="control-section">
+      <h2>Bathymetry</h2>
+      <button 
+        on:click={toggleBathymetry} 
+        class="control-button {bathyVisibility ? 'visible' : 'hidden'}">
+        {bathyVisibility ? 'Hide' : 'Show'} Bathymetry
+      </button>
     </div>
   </div>
   
@@ -157,12 +185,12 @@
     
     .control-button.visible {
       color: white;
-      background: #444;
+      background: #333;
     }
     
     .control-button.hidden {
-      color: rgba(255, 255, 255, 0.5); /* Faded color for hidden state */
-      background: #333; /* Slightly darker background for hidden state */
+      color: rgba(255, 255, 255, 0.3); /* Faded color for hidden state */
+      background: #444; /* Slightly darker background for hidden state */
     }
     
     .control-button:hover {

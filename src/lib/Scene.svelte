@@ -6,6 +6,7 @@
 
   import {onMount} from 'svelte';
   import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+  import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
   import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
   import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
   import {testGUI, addLabels} from './testGUI.js'; // Import the setupGUI function from Control.svelte
@@ -22,9 +23,12 @@
 
   let chgRate = {}; // Store parsed CSV data by group and interval
   let changeRatePolygons = {}; // Store references to polygons
+  let bathymetryObjects = []; // Store references to bathymetry objects
 
   // Red for erosion (negative values), blue for accretion (positive values)
   const colorScale = d3.scaleSequential(d3.interpolateRdYlBu).domain([-50, 10]);
+
+  let isLoading = true; // Track loading state
 
   // Initialize the scene, camera, renderer and controls
   const initScene = () => {
@@ -60,6 +64,9 @@
   const loadModel = () => {
     return new Promise((resolve, reject) => {
       const loader = new GLTFLoader();
+      const dracoLoader = new DRACOLoader()
+      dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.5/")
+      loader.setDRACOLoader(dracoLoader)
       loader.load(
         modelPath, 
         (gltf) => {
@@ -131,6 +138,7 @@
   const processLayers = (model) => {
     // Reset the layers object
     shorelines = {};
+    bathymetryObjects = []; // Reset bathymetry objects
 
     // Initialize with empty arrays for each year
     years.forEach((year) => {
@@ -160,8 +168,14 @@
           object.material.depthTest = false;
         }
       }
+
+      // Collect bathymetry objects
+      if (object.name.includes("_bathy")) {
+        bathymetryObjects.push(object);
+      }
     })
 
+    console.log('Bathymetry objects:', bathymetryObjects);
     // console.log('Processed shoreline layers:', shorelines);
   };
 
@@ -205,9 +219,9 @@
           };
           
           // Show only the first interval by default
-          const isFirstInterval = parseInt(intervalNumber) === 2;
-          object.visible = isFirstInterval;
-        }
+          // object.visible = parseInt(intervalNumber) === 2;  // Show only the first interval by default
+          object.visible = true; // Set all layers to be visible for now
+          }
       }
     });
     
@@ -256,7 +270,7 @@
     mainLight.position.set(5, 5, 15); // Position the light
     scene.add(mainLight);
 
-    const secLight = new THREE.DirectionalLight(0x99ccff, 1); // White light, intensity 1
+    const secLight = new THREE.DirectionalLight(0xf2f1eb, 1); // White light, intensity 1
     secLight.position.set(15, 15, -10); // Position the light
     scene.add(secLight);
 
@@ -318,9 +332,11 @@
       addLabels(model,'Westport');
       addLabels(model,'North_Cove');
       // testGUI(camera, shorelines, years, changeRatePolygons, model); // Set up GUI controls
+      isLoading = false; // Set loading to false after everything is ready
       animate(); // Start animation loop
     } catch (error) {
       console.error('Failed to initialize:', error);
+      isLoading = false; // Ensure loading is false even if there's an error
     }
   };
   
@@ -338,9 +354,12 @@
 </script>
 
 <div class="scene3d" bind:this={scene3d}>
+  {#if isLoading}
+    <div class="loading-message">3D scene loading...</div>
+  {/if}
   <canvas class="scene-canvas" bind:this={el}></canvas>
   <div class="control">
-    <Ui {years} {shorelines} {changeRatePolygons} {chgRate} />
+    <Ui {years} {shorelines} {changeRatePolygons} {chgRate} {bathymetryObjects} />
   </div>
   <div class="key">
     <ColorLegend />
@@ -376,5 +395,18 @@
     top: 10px;
     right: 10px;
     z-index: 10; /* Ensure the control is above the scene */
+  }
+
+  .loading-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 18px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px 20px;
+    border-radius: 5px;
+    z-index: 20;
   }
 </style>

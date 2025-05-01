@@ -10,7 +10,6 @@
 
 <main>
   <header class="App-header">
-    <img src={Clogo} class="logo" alt="logo" />
     <h1>
       Historical evolution of the Grayland Plains shoreline
     </h1>
@@ -23,11 +22,12 @@
     <div class="description">
       <h2>About</h2>
       <p>
-        This visualization shows the historical evolution of the Grayland Plains shoreline over time, 
-        based on the study <a href="https://www.sciencedirect.com/science/article/pii/S002532271000068X" target="_blank">Historical evolution of the Columbia River littoral cell</a>.
+        This visualization explores coastal science communication, based on the study
+        <a href="https://www.sciencedirect.com/science/article/pii/S002532271000068X" target="_blank">
+         Historical evolution of the Columbia River littoral cell</a>.
       </p>
       <p>
-        Thanks to Washington Department of Ecology for providing the data of historic shorelines and change rates.
+        Special thanks to Washington Department of Ecology for providing the data of historic shorelines and change rates.
       </p>
       <h3>Other Resources</h3>
       <li>

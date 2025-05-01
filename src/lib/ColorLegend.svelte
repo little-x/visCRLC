@@ -134,6 +134,10 @@
 <div class="legend">
   <svg bind:this={bathymetrySvgElement} width={width} height={height}></svg>
   <svg bind:this={changeRateSvgElement} width={width} height={height}></svg>
+  <div class="no-data-legend">
+    <div class="no-data-color"></div>
+    <span>No Data</span>
+  </div>
 </div>
 
 <style>
@@ -152,5 +156,20 @@
 
   svg {
     margin-bottom: 10px;
+  }
+
+  .no-data-legend {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    margin-top: 5px;
+  }
+
+  .no-data-color {
+    width: 15px;
+    height: 15px;
+    background-color: #bec4c1;
+    border: 1px solid #000;
   }
 </style>
