@@ -48,6 +48,7 @@ body {
   grid-auto-rows: auto; */
   display: flex;
   gap: 2em;
+  flex-direction: column;
   max-width: 80vw;
   margin-left: auto;
   margin-right: auto;
@@ -62,14 +63,19 @@ body {
 }
 
 .scene {
-  width: 80%;
-  min-width: 70%;
+  width: 100%;
   height: auto;
-  /* border:#918c26 1px solid; */
+  border:#b8b893 1px solid;
+  position: relative;
 }
 
 .description {
-  /* border:#918c26 1px solid; */
+  width: 60%;
+  min-width: 300px;
+  justify-self: center;
+  margin-left: auto;
+  margin-right: auto;
+  /* text-align: center; */
 }
 @media (max-width: 900px) {
   .scene {

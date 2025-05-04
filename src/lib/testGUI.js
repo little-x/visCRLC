@@ -105,7 +105,7 @@ export const testGUI = (camera, shorelines, years, changeRatePolygons, model) =>
 
   };
 
-  export const addLabels = (model,name) => {
+  export const addLabels = (model, name) => {
     if (!model) return;
   // Create a combined bounding box for all matching objects
   const combinedBox = new THREE.Box3();
@@ -128,11 +128,11 @@ export const testGUI = (camera, shorelines, years, changeRatePolygons, model) =>
     
     const lbDiv = document.createElement('div');
     lbDiv.classList.add('label');
-    lbDiv.textContent = name;
+    lbDiv.textContent = name.replace(/_/g, ' '); // Replace underscores with spaces
     
     // Create the label at the center position and add it to the scene
     const label = new CSS2DObject(lbDiv);
-    label.position.set(center.x*10, center.y*10, center.z*10);
+    label.position.set(center.x * 10, center.y * 10, center.z * 10);
     
     // Add to the scene or a parent object that contains all the meshes
     model.add(label);

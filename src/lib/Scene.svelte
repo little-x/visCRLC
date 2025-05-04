@@ -44,7 +44,12 @@
     // Add orbit controls for better navigation
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
+    controls.dampingFactor = .05;
+    controls.maxPolarAngle = Math.PI / 3; // Limit vertical rotation
+    controls.minDistance = 1000; // Minimum zoom distance
+    controls.maxDistance = 5000; // Maximum zoom distance
+    controls.zoomToCursor = true; // Zooming centered at the cursor location
+
 
     // Create and configure the CSS2DRenderer
     labelRenderer = new CSS2DRenderer();
@@ -219,8 +224,8 @@
           };
           
           // Show only the first interval by default
-          // object.visible = parseInt(intervalNumber) === 2;  // Show only the first interval by default
-          object.visible = true; // Set all layers to be visible for now
+          object.visible = parseInt(intervalNumber) === 2;  // Show only the first interval by default
+          // object.visible = true; // Set all layers to be visible for now
           }
       }
     });
@@ -353,11 +358,13 @@
   });
 </script>
 
-<div class="scene3d" bind:this={scene3d}>
-  {#if isLoading}
-    <div class="loading-message">3D scene loading...</div>
-  {/if}
-  <canvas class="scene-canvas" bind:this={el}></canvas>
+<div class="scene-container">
+  <div class="scene3d" bind:this={scene3d}>
+    {#if isLoading}
+      <div class="loading-message">3D scene loading...</div>
+    {/if}
+    <canvas class="scene-canvas" bind:this={el}></canvas>
+  </div>
   <div class="control">
     <Ui {years} {shorelines} {changeRatePolygons} {chgRate} {bathymetryObjects} />
   </div>
@@ -375,6 +382,7 @@
     font-size: 14px;
     pointer-events: none; /* Prevent labels from blocking mouse events */
   }
+
 
   .scene3d {
     display: flex;

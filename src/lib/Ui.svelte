@@ -73,18 +73,10 @@
     function toggleShoreline(year) {
       if (!shorelines || !shorelines[year]) return;
 
-      // Deactivate all other years
-      Object.keys(shorelineVisibility).forEach(y => {
-        shorelineVisibility[y] = false;
-        shorelines[y]?.forEach(item => {
-          item.visible = false;
-        });
-      });
-
-      // Activate the selected year
-      shorelineVisibility[year] = true;
-      shorelines[year]?.forEach(item => {
-        item.visible = true;
+      // Toggle visibility for the selected year
+      shorelineVisibility[year] = !shorelineVisibility[year];
+      shorelines[year].forEach(item => {
+        item.visible = shorelineVisibility[year];
       });
 
       shorelineVisibility = { ...shorelineVisibility }; // Force reactivity
@@ -93,14 +85,39 @@
     function toggleChangeRate(interval) {
       if (!changeRatePolygons) return;
 
-      changeRateVisibility[interval] = !changeRateVisibility[interval];
-
-      // Update visibility for all groups in this interval
-      Object.keys(changeRatePolygons[interval]).forEach(groupId => {
-        changeRatePolygons[interval][groupId].object.visible = changeRateVisibility[interval];
+      // Deactivate all other intervals
+      Object.keys(changeRateVisibility).forEach(i => {
+        changeRateVisibility[i] = false;
+        Object.keys(changeRatePolygons[i]).forEach(groupId => {
+          changeRatePolygons[i][groupId].object.visible = false;
+        });
       });
 
+      // Activate the selected interval
+      changeRateVisibility[interval] = true;
+      Object.keys(changeRatePolygons[interval]).forEach(groupId => {
+        changeRatePolygons[interval][groupId].object.visible = true;
+      });
+
+      // Update shoreline visibility based on the interval's start and end years
+      const groupIds = Object.keys(changeRatePolygons[interval] || {});
+      if (groupIds.length > 0) {
+        const firstGroup = changeRatePolygons[interval][groupIds[0]];
+        const startYear = firstGroup.startYear;
+        const endYear = firstGroup.endYear;
+
+        years.forEach(year => {
+          shorelineVisibility[year] = year >= startYear && year <= endYear;
+          if (shorelines[year]) {
+            shorelines[year].forEach(item => {
+              item.visible = shorelineVisibility[year];
+            });
+          }
+        });
+      }
+
       changeRateVisibility = { ...changeRateVisibility }; // Force reactivity
+      shorelineVisibility = { ...shorelineVisibility }; // Force reactivity
     }
     
     function toggleBathymetry() {
@@ -118,62 +135,88 @@
       }
       return `Interval ${interval}`;
     }
+      // Calculate the proportional position of each year along the timeline
+  function getYearPosition(year) {
+    const minYear = Math.min(...years);
+    const maxYear = Math.max(...years);
+    return ((year - minYear) / (maxYear - minYear)) * 100;
+  }
+
   </script>
   
   <div class="controls-container">
     <div class="control-section">
       <h2>Shoreline Years</h2>
-      {#each years || [] as year}
-        <button 
-          on:click={() => toggleShoreline(year)} 
-          class="control-button {shorelineVisibility[year] ? 'visible' : 'hidden'}">
-          {year}
-        </button>
-      {/each}
+      <div class="control-buttons">
+        {#each years || [] as year}
+          <button 
+            on:click={() => toggleShoreline(year)} 
+            class="control-button {shorelineVisibility[year] ? 'visible' : 'hidden'}">
+            <!-- style="left: {getYearPosition(year)}%;"> -->
+            {year}
+          </button>
+        {/each}
+      </div>
     </div>
     
     <div class="control-section">
       <h2>Intervals</h2>
-      {#each Object.keys(changeRateVisibility) as interval}
-        <button 
-          on:click={() => toggleChangeRate(interval)} 
-          class="control-button {changeRateVisibility[interval] ? 'visible' : 'hidden'}">
-          {getIntervalLabel(interval)}
-        </button>
-      {/each}
+      <div class="control-buttons">
+        {#each Object.keys(changeRateVisibility) as interval}
+          <button 
+            on:click={() => toggleChangeRate(interval)} 
+            class="control-button {changeRateVisibility[interval] ? 'visible' : 'hidden'}">
+            {getIntervalLabel(interval)}
+          </button>
+        {/each}
+      </div>
     </div>
 
     <div class="control-section">
       <h2>Bathymetry</h2>
-      <button 
-        on:click={toggleBathymetry} 
-        class="control-button {bathyVisibility ? 'visible' : 'hidden'}">
-        {bathyVisibility ? 'Hide' : 'Show'} Bathymetry
-      </button>
+      <div class="control-buttons">
+        <button 
+          on:click={toggleBathymetry} 
+          class="control-button {bathyVisibility ? 'visible' : 'hidden'}">
+          {bathyVisibility ? 'Hide' : 'Show'} Bathymetry
+        </button>
+      </div>
     </div>
   </div>
   
   <style>
     .controls-container {
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       background: rgba(0, 0, 0, 0.7);
       color: white;
       padding: 10px;
       border-radius: 5px;
-      max-width: 400px;
       z-index: 100;
       gap: 10px;
     }
     
     .control-section {
       display: flex;
-      flex-direction: column;
-      margin: 5px;
+      flex-direction: row;
+      align-items: flex-start; /* Align items at the top */
+      gap: 10px;
+    }
+    
+    .control-section h2 {
+      margin: 0;
+      font-size: 16px;
+      width: 100px; /* Fixed width to align all headings */
+      text-align: left;
+    }
+    
+    .control-buttons {
+      display: flex;
+      flex-direction: row;
+      gap: 4px; /* Add spacing between buttons */
     }
     
     .control-button {
-      margin: 4px;
       padding: 6px 12px;
       background: #444;
       color: white;
@@ -181,6 +224,7 @@
       border-radius: 3px;
       cursor: pointer;
       transition: color 0.3s ease, background 0.3s ease;
+      text-align: left; 
     }
     
     .control-button.visible {
@@ -189,17 +233,11 @@
     }
     
     .control-button.hidden {
-      color: rgba(255, 255, 255, 0.3); /* Faded color for hidden state */
-      background: #444; /* Slightly darker background for hidden state */
+      color: rgba(255, 255, 255, 0.3);
+      background: #333; 
     }
     
     .control-button:hover {
       background: #666;
-    }
-    
-    h2 {
-      margin-top: 5px;
-      font-size: 16px;
-      margin-bottom: 8px;
     }
   </style>
