@@ -10,7 +10,7 @@ header {
   width: 100vw;
   /* background-color: #282c34; */
   height: 8vh;
-  min-height: 2vh;
+  min-height: .5vh;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -50,6 +50,7 @@ body {
   gap: 2em;
   flex-direction: column;
   max-width: 80vw;
+  margin-top: 3vh;
   margin-left: auto;
   margin-right: auto;
   counter-reset: sidenote-counter;
@@ -64,7 +65,7 @@ body {
 
 .scene {
   width: 100%;
-  height: auto;
+  height: 80%;
   border:#b8b893 1px solid;
   position: relative;
 }

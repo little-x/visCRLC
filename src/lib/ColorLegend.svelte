@@ -10,7 +10,7 @@
 
   // Props for Change Rate Legend
   export let changeRateMinValue = -50;
-  export let changeRateMaxValue = 10;
+  export let changeRateMaxValue = 50;
   export let changeRateTitle = "Change Rate (m/yr)";
   export let changeRateDescription = "Red = Erosion, Blue = Accretion";
 
@@ -116,8 +116,7 @@
       .range([changeRateMargin.left, width - changeRateMargin.right]);
 
     const changeRateAxis = d3.axisBottom(changeRateAxisScale)
-      .ticks(5)
-      .tickFormat(d3.format(".1f"));
+      .ticks(5,".1f")
 
     changeRateSvg.append("g")
       .attr("transform", `translate(0, 45)`)
@@ -132,7 +131,7 @@
 </script>
 
 <div class="legend">
-  <svg bind:this={bathymetrySvgElement} width={width} height={height}></svg>
+  <!-- <svg bind:this={bathymetrySvgElement} width={width} height={height}></svg> -->
   <svg bind:this={changeRateSvgElement} width={width} height={height}></svg>
   <div class="no-data-legend">
     <div class="no-data-color"></div>

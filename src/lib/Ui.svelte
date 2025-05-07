@@ -7,7 +7,8 @@
     export let years;
     export let chgRate; 
     export let bathymetryObjects; // Add a prop for bathymetry objects
-    
+    export let transectObjects; // Add a prop for bathymetry objects
+
     // Store visibility of shoreline years
     let shorelineVisibility = {};
     
@@ -15,7 +16,8 @@
     let changeRateVisibility = {};
     
     let bathyVisibility = true; // Track bathymetry visibility
-    
+    let transectVisibility = false; // Track transect visibility
+
     // Make this reactive to prop changes
     $: if (years && shorelines) {
       initShorelineVisibility();
@@ -126,6 +128,12 @@
         obj.visible = bathyVisibility;
       });
     }
+    function toggleTransect() {
+      transectVisibility = !transectVisibility;
+      transectObjects?.forEach(obj => {
+        obj.visible = transectVisibility;
+      });
+    }
 
     function getIntervalLabel(interval) {
       const groupIds = Object.keys(changeRatePolygons[interval] || {});
@@ -146,7 +154,10 @@
   
   <div class="controls-container">
     <div class="control-section">
-      <h2>Shoreline Years</h2>
+      <h2 class="annotated-title">
+        Historic Shorelines
+        <div class="annotation-box">Shorelines are calculated by eras</div>
+      </h2>
       <div class="control-buttons">
         {#each years || [] as year}
           <button 
@@ -160,7 +171,10 @@
     </div>
     
     <div class="control-section">
-      <h2>Intervals</h2>
+      <h2 class="annotated-title">
+        Intervals
+        <div class="annotation-box">Change rates are calculated from starting and ending shorelines</div>
+      </h2>
       <div class="control-buttons">
         {#each Object.keys(changeRateVisibility) as interval}
           <button 
@@ -172,7 +186,7 @@
       </div>
     </div>
 
-    <div class="control-section">
+    <!-- <div class="control-section">
       <h2>Bathymetry</h2>
       <div class="control-buttons">
         <button 
@@ -181,11 +195,36 @@
           {bathyVisibility ? 'Hide' : 'Show'} Bathymetry
         </button>
       </div>
+    </div> -->
+
+    <div class="control-section">
+      <h2 class="annotated-title">
+        Segment transects
+        <div class="annotation-box">Shorelines are transected into segments 
+          for change rates calculation</div>
+      </h2>
+      <div class="control-buttons">
+        <button 
+          on:click={toggleTransect}
+          class="control-button {transectVisibility ? 'visible' : 'hidden'}"> 
+          {transectVisibility ? 'Hide' : 'Show'} Transect
+        </button>
+      </div>
     </div>
   </div>
   
-  <style>
+  <div class="instructions">
+    Click and drag to rotate the scene <br>
+    Left button: orbit <br>
+    Right button: pan <br>
+  </div>
+
+<style>
     .controls-container {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 10; /* Ensure the control is above the scene */
       display: flex;
       flex-direction: column;
       background: rgba(0, 0, 0, 0.7);
@@ -206,7 +245,7 @@
     .control-section h2 {
       margin: 0;
       font-size: 16px;
-      width: 100px; /* Fixed width to align all headings */
+      width: 120px; /* Fixed width to align all headings */
       text-align: left;
     }
     
@@ -239,5 +278,37 @@
     
     .control-button:hover {
       background: #666;
+    }
+
+    .annotated-title {
+      position: relative;
+      display: inline-block;
+    }
+
+    .annotated-title:hover .annotation-box {
+      display: block;
+    }
+
+    .annotation-box {
+      display: none;
+      position: absolute;
+      top: 0;
+      right: 105%; /* Position to the left of the container */
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 3px;
+      font-size: 16px;
+      white-space: nowrap;
+      z-index: 200;
+      margin-right: 10px; /* Add spacing between the box and the container */
+    }
+
+    .instructions {
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.4);
+      position: absolute;
+      top: 10px;
+      left: 10px;
     }
   </style>

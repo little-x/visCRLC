@@ -24,9 +24,14 @@
   let chgRate = {}; // Store parsed CSV data by group and interval
   let changeRatePolygons = {}; // Store references to polygons
   let bathymetryObjects = []; // Store references to bathymetry objects
+  let transectObjects = []; // Store references to transect objects
 
   // Red for erosion (negative values), blue for accretion (positive values)
-  const colorScale = d3.scaleSequential(d3.interpolateRdYlBu).domain([-50, 10]);
+  const colorScale = d3.scaleSequential(d3.interpolateRdYlBu).domain([-50, 50]);
+
+  // Gradient color scale for shoreline years
+  const shorelineColorScale = d3.scaleSequential(d3.interpolateRgb("gray", "black"))
+    .domain([Math.min(...years), Math.max(...years)]);
 
   let isLoading = true; // Track loading state
 
@@ -46,7 +51,7 @@
     controls.enableDamping = true;
     controls.dampingFactor = .05;
     controls.maxPolarAngle = Math.PI / 3; // Limit vertical rotation
-    controls.minDistance = 1000; // Minimum zoom distance
+    controls.minDistance = 300; // Minimum zoom distance
     controls.maxDistance = 5000; // Maximum zoom distance
     controls.zoomToCursor = true; // Zooming centered at the cursor location
 
@@ -158,10 +163,18 @@
           if (object.name.startsWith(year.toString())) {
             shorelines[year].push(object);
 
+            // Apply color based on the year
+            if (object.material) {
+              object.material = new THREE.MeshBasicMaterial({
+                color: new THREE.Color(shorelineColorScale(year)),
+                transparent: true,
+                opacity: 1,
+              });
+            }
+
             // Initially hide all layers except the first year
-            object.visible = year === years[0]; // Show only the first year by default
-            // object.visible = true; // Set all layers to be visible for now
-            // console.log(`"${object.name}"`);
+            // object.visible = year === years[0];
+            object.visible = true; // Set all layers to be visible for now
           }
         });
       }
@@ -178,10 +191,11 @@
       if (object.name.includes("_bathy")) {
         bathymetryObjects.push(object);
       }
-    })
-
-    console.log('Bathymetry objects:', bathymetryObjects);
-    // console.log('Processed shoreline layers:', shorelines);
+      if (object.name.includes("_transect")) {
+        transectObjects.push(object);
+        object.visible = false;
+      }
+    });
   };
 
   const findChangeRatePolygons = (model) => {
@@ -320,6 +334,13 @@
     labelRenderer.render(scene, camera); // Render labels
   };
   
+  const addAllLabels = () => {
+    addLabels(model,'Tokeland');
+      addLabels(model,'Westport');
+      addLabels(model,'North_Cove');
+      addLabels(model,'Grays_Harbor');
+      addLabels(model,'Willapa_Bay');
+  };
   
   // Main initialization function
   const init = async () => {
@@ -333,10 +354,8 @@
       processLayers(loadedModel); // Process layers after loading the model
       findChangeRatePolygons(loadedModel); // Find and categorize polygons
       applyChangeRateColors(); // Apply colors based on change rates
-      addLabels(model,'Tokeland');
-      addLabels(model,'Westport');
-      addLabels(model,'North_Cove');
       // testGUI(camera, shorelines, years, changeRatePolygons, model); // Set up GUI controls
+      addAllLabels(); // Add labels to the model
       isLoading = false; // Set loading to false after everything is ready
       animate(); // Start animation loop
     } catch (error) {
@@ -366,7 +385,7 @@
     <canvas class="scene-canvas" bind:this={el}></canvas>
   </div>
   <div class="control">
-    <Ui {years} {shorelines} {changeRatePolygons} {chgRate} {bathymetryObjects} />
+    <Ui {years} {shorelines} {changeRatePolygons} {chgRate} {bathymetryObjects} {transectObjects}/>
   </div>
   <div class="key">
     <ColorLegend />
@@ -398,12 +417,12 @@
     height: 100%;
   }
 
-  .control {
+  /* .control {
     position: absolute;
     top: 10px;
     right: 10px;
-    z-index: 10; /* Ensure the control is above the scene */
-  }
+    z-index: 10;
+  } */
 
   .loading-message {
     position: absolute;
