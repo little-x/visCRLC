@@ -10,7 +10,7 @@
   import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
   import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
   import {testGUI} from './testGUI.js'; 
-  import {addLabels} from './Label.js';
+  import {addLabels} from './label.js';
   import Ui from './Ui.svelte';
   import ColorLegend from './ColorLegend.svelte';
   
@@ -18,13 +18,13 @@
   let scene, camera, renderer, controls, labelRenderer;
   let model, el, scene3d; // Reference to the .scene3d element
   const modelPath = import.meta.env.BASE_URL + '3d/GL.glb';
-  let shorelines = {}; // Object to store shoreline layers by year
   const years = [1870, 1920, 1950, 2000, 2015]; // historic years
-
+  let shorelines = {}; // store shoreline layers by year
+  let shorelineSrf = {}; // Store references to shoreline surfaces
   let chgRate = {}; // Store parsed CSV data by group and interval
-  let changeRatePolygons = {}; // Store references to polygons
-  let bathymetryObjects = []; // Store references to bathymetry objects
-  let transectObjects = []; // Store references to transect objects
+  let changeRatePolygons = {}; // Store references
+  let bathymetryObjects = [];
+  let transectObjects = []; 
 
   // Red for erosion (negative values), blue for accretion (positive values)
   const colorScale = d3.scaleSequential(d3.interpolateRdYlBu).domain([-50, 50]);
@@ -123,19 +123,19 @@
         // const changeRate = parseFloat(row['ChgRate (m/yr)']);
 
         // Create nested structure if it doesn't exist
-        if (!chgRate[groupId]) {
-          chgRate[groupId] = {};
+        if (!chgRate[intervalNumber]) {
+          chgRate[intervalNumber] = {};
         }
         
         // Store by interval number for easy lookup
-        chgRate[groupId][intervalNumber] = {
+        chgRate[intervalNumber][groupId] = {
           startYear: startYear,
           endYear: endYear,
           rate: changeRate
         };
       });
       
-      // console.log('Parsed change rate data:', chgRate);
+      console.log('Parsed change rate data:', chgRate);
       return chgRate;
     } catch (error) {
       console.error('Error loading change rate data:', error);
@@ -149,11 +149,15 @@
     // Reset the layers object
     shorelines = {};
     bathymetryObjects = []; // Reset bathymetry objects
+    transectObjects = []; // Reset transect objects
 
     // Initialize with empty arrays for each year
     years.forEach((year) => {
       shorelines[year] = [];
     });
+    
+    // Find the oldest year
+    const oldestYear = Math.min(...years);
 
     // Traverse the shoreline parent to find shoreline layers
     model.traverse((object) => {
@@ -172,9 +176,8 @@
               });
             }
 
-            // Initially hide all layers except the first year
-            // object.visible = year === years[0];
-            object.visible = true; // Set all layers to be visible for now
+            // Initially make all shoreline objects visible
+            object.visible = true;
           }
         });
       }
@@ -186,8 +189,22 @@
           object.material.depthTest = false;
         }
       }
-
-      // Collect bathymetry objects
+      
+      // Handle shoreline surfaces - only show the oldest year's surface
+      if (object.name.includes("_srf")) {
+        shorelineSrf[object.name] = object;
+        
+        // Extract year from the object name
+        const yearMatch = object.name.match(/^(\d+)/);
+        if (yearMatch) {
+          const year = parseInt(yearMatch[1]);
+          // Only show the oldest year's surface
+          object.visible = year === oldestYear;
+        } else {
+          object.visible = false; // Default to hidden if year can't be determined
+        }
+      }
+      
       if (object.name.includes("_bathy")) {
         bathymetryObjects.push(object);
       }
@@ -202,7 +219,6 @@
     changeRatePolygons = {};
     
     model.traverse(object => {
-      // Check if this is a mesh and has a name that matches our pattern
       if (object.isMesh || object.isGroup) {
         // Parse the name to extract group ID, interval, start year, and end year
         // Format: {groupId}_int{intervalNumber}_s{startYear}_e{endYear}
@@ -256,8 +272,8 @@
         const polygonInfo = changeRatePolygons[intervalNumber][groupId];
 
         // Get the corresponding change rate data
-        if (chgRate[groupId] && chgRate[groupId][intervalNumber]) {
-          const rate = chgRate[groupId][intervalNumber].rate;
+        if (chgRate[intervalNumber] && chgRate[intervalNumber][groupId]) {
+          const rate = chgRate[intervalNumber][groupId].rate;
 
           // Get the color for this rate
           const color = colorScale(rate);

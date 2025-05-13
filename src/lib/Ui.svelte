@@ -79,8 +79,47 @@
       
       // Update the actual objects
       shorelines[year].forEach(item => {
-        item.visible = newVisibility[year];
+        // For regular shoreline objects (not surfaces), just toggle visibility
+        if (!item.name.includes("_srf")) {
+          item.visible = newVisibility[year];
+        }
       });
+      
+      // For surfaces (_srf), ensure only the most recent visible year has its surface shown
+      // Get all currently visible years (including the one we just toggled)
+      const visibleYears = Object.entries(newVisibility)
+        .filter(([_, isVisible]) => isVisible)
+        .map(([yr, _]) => parseInt(yr));
+      
+      // If we have visible years, find the most recent one
+      if (visibleYears.length > 0) {
+        const mostRecentYear = Math.max(...visibleYears);
+        
+        // Update all shoreline surfaces
+        years.forEach(yr => {
+          if (shorelines[yr]) {
+            shorelines[yr].forEach(item => {
+              if (item.name.includes("_srf")) {
+                // Only show the surface for the most recent visible year
+                item.visible = parseInt(yr) === mostRecentYear && newVisibility[yr];
+              }
+            });
+          }
+        });
+      } else {
+        // If no shorelines are visible, show the most recent year's shoreline and surface
+        const mostRecentYear = Math.max(...years);
+        
+        // Show the most recent shoreline
+        if (shorelines[mostRecentYear]) {
+          shorelines[mostRecentYear].forEach(item => {
+            item.visible = true;
+          });
+          
+          // Update visibility state
+          newVisibility[mostRecentYear] = true;
+        }
+      }
 
       shorelineVisibility = newVisibility;
     }
