@@ -1,6 +1,4 @@
 import GUI from 'lil-gui';
-import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
-import * as THREE from 'three';
 
 export const testGUI = (camera, shorelines, years, changeRatePolygons, model) => {
     let gui = new GUI();
@@ -104,38 +102,4 @@ export const testGUI = (camera, shorelines, years, changeRatePolygons, model) =>
       changeRateFolder.open();
 
   };
-
-  export const addLabels = (model, name) => {
-    if (!model) return;
-  // Create a combined bounding box for all matching objects
-  const combinedBox = new THREE.Box3();
-  let foundMatchingObject = false;
-  
-  // Find all objects with matching name and expand the bounding box
-  model.traverse((object) => {
-    if (object.isMesh && object.name.includes(name)) {
-      foundMatchingObject = true;
-      const objectBox = new THREE.Box3().setFromObject(object);
-      combinedBox.union(objectBox); // Use union to combine bounding boxes
-    }
-  });
-  
-  // If we found matching objects, create one label at the center
-  if (foundMatchingObject) {
-    // Get the center of the combined bounding box
-    const center = new THREE.Vector3();
-    combinedBox.getCenter(center);
-    
-    const lbDiv = document.createElement('div');
-    lbDiv.classList.add('label');
-    lbDiv.textContent = name.replace(/_/g, ' '); // Replace underscores with spaces
-    
-    // Create the label at the center position and add it to the scene
-    const label = new CSS2DObject(lbDiv);
-    label.position.set(center.x * 10, center.y * 10, center.z * 10);
-    
-    // Add to the scene or a parent object that contains all the meshes
-    model.add(label);
-  }    
-};
 

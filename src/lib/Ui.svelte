@@ -1,49 +1,47 @@
 <script>
     import { onMount } from 'svelte';
     
-    // Match the prop names with what you're passing from Scene.svelte
-    export let shorelines; // Changed from shorelineLayers to match your Scene.svelte
-    export let changeRatePolygons;
-    export let years;
-    export let chgRate; 
-    export let bathymetryObjects; // Add a prop for bathymetry objects
-    export let transectObjects; // Add a prop for bathymetry objects
+    let {shorelines, changeRatePolygons, years, 
+      chgRate, bathymetryObjects, transectObjects} = $props();
 
-    // Store visibility of shoreline years
-    let shorelineVisibility = {};
-    
-    // Store visibility of change rate intervals
-    let changeRateVisibility = {};
-    
-    let bathyVisibility = true; // Track bathymetry visibility
-    let transectVisibility = false; // Track transect visibility
+    // Store visibility of shoreline years and change rate intervals
+    let shorelineVisibility = $state({});
+    let changeRateVisibility = $state({});
+    let bathyVisibility = $state(true); // Track bathymetry visibility
+    let transectVisibility = $state(false); // Track transect visibility
 
-    // Make this reactive to prop changes
-    $: if (years && shorelines) {
-      initShorelineVisibility();
-    }
-    
-    $: if (changeRatePolygons) {
-      initChangeRateVisibility();
-    }
-    
+    $effect(() => {
+      // Initialize visibility states when shorelines or changeRatePolygons change
+      if (years && shorelines) {
+        initShorelineVisibility();
+      }
+      
+      if (changeRatePolygons) {
+        initChangeRateVisibility();
+      }
+    });
+
     function initShorelineVisibility() {
       // Reset or initialize shoreline visibility
+      const newVisibility = {};
       years.forEach(year => {
         // Check if shorelines is defined and has the year
         if (shorelines && shorelines[year] && shorelines[year].length > 0) {
-          shorelineVisibility[year] = shorelines[year][0].visible;
+          newVisibility[year] = shorelines[year][0].visible;
         } else {
           // Default to true if data isn't available yet
-          shorelineVisibility[year] = true;
+          newVisibility[year] = true;
         }
       });
-      shorelineVisibility = {...shorelineVisibility}; // Force reactivity
+      shorelineVisibility = newVisibility; // Assign entire new object instead of mutation
     }
     
     function initChangeRateVisibility() {
       // Reset or initialize change rate visibility
+      if (!changeRatePolygons) return;
+      
       const intervals = Object.keys(changeRatePolygons);
+      const newVisibility = {};
 
       intervals.forEach(interval => {
         let isVisible = false;
@@ -55,10 +53,10 @@
           }
         });
 
-        changeRateVisibility[interval] = isVisible;
+        newVisibility[interval] = isVisible;
       });
 
-      changeRateVisibility = { ...changeRateVisibility }; // Force reactivity
+      changeRateVisibility = newVisibility; // Assign entire new object
     }
     
     onMount(() => {
@@ -75,51 +73,68 @@
     function toggleShoreline(year) {
       if (!shorelines || !shorelines[year]) return;
 
-      // Toggle visibility for the selected year
-      shorelineVisibility[year] = !shorelineVisibility[year];
+      // Create a new object for reactivity
+      const newVisibility = { ...shorelineVisibility };
+      newVisibility[year] = !newVisibility[year];
+      
+      // Update the actual objects
       shorelines[year].forEach(item => {
-        item.visible = shorelineVisibility[year];
+        item.visible = newVisibility[year];
       });
 
-      shorelineVisibility = { ...shorelineVisibility }; // Force reactivity
+      shorelineVisibility = newVisibility;
     }
     
     function toggleChangeRate(interval) {
       if (!changeRatePolygons) return;
 
-      // Deactivate all other intervals
-      Object.keys(changeRateVisibility).forEach(i => {
-        changeRateVisibility[i] = false;
+      // Create new objects for reactivity
+      const newChangeRateVisibility = { ...changeRateVisibility };
+      const newShorelineVisibility = { ...shorelineVisibility };
+      
+      // Check if currently selected interval is already visible
+      const isCurrentlyVisible = changeRateVisibility[interval];
+      
+      // Deactivate all intervals
+      Object.keys(changeRatePolygons).forEach(i => {
+        newChangeRateVisibility[i] = i === interval ? !isCurrentlyVisible : false;
         Object.keys(changeRatePolygons[i]).forEach(groupId => {
-          changeRatePolygons[i][groupId].object.visible = false;
+          changeRatePolygons[i][groupId].object.visible = i === interval ? !isCurrentlyVisible : false;
         });
       });
 
-      // Activate the selected interval
-      changeRateVisibility[interval] = true;
-      Object.keys(changeRatePolygons[interval]).forEach(groupId => {
-        changeRatePolygons[interval][groupId].object.visible = true;
-      });
-
-      // Update shoreline visibility based on the interval's start and end years
-      const groupIds = Object.keys(changeRatePolygons[interval] || {});
-      if (groupIds.length > 0) {
-        const firstGroup = changeRatePolygons[interval][groupIds[0]];
-        const startYear = firstGroup.startYear;
-        const endYear = firstGroup.endYear;
-
+      // If toggling off, show all shorelines that were previously visible
+      if (isCurrentlyVisible) {
         years.forEach(year => {
-          shorelineVisibility[year] = year >= startYear && year <= endYear;
+          // Keep existing visibility - don't change shorelines
           if (shorelines[year]) {
-            shorelines[year].forEach(item => {
-              item.visible = shorelineVisibility[year];
-            });
+            // Don't modify shorelines visibility when turning off an interval
           }
         });
+      } else {
+        // Turning on an interval - update shoreline visibility based on interval
+        const groupIds = Object.keys(changeRatePolygons[interval] || {});
+        if (groupIds.length > 0) {
+          const firstGroup = changeRatePolygons[interval][groupIds[0]];
+          const startYear = firstGroup.startYear;
+          const endYear = firstGroup.endYear;
+
+          years.forEach(year => {
+            const shouldBeVisible = year >= startYear && year <= endYear;
+            newShorelineVisibility[year] = shouldBeVisible;
+            
+            if (shorelines[year]) {
+              shorelines[year].forEach(item => {
+                item.visible = shouldBeVisible;
+              });
+            }
+          });
+        }
       }
 
-      changeRateVisibility = { ...changeRateVisibility }; // Force reactivity
-      shorelineVisibility = { ...shorelineVisibility }; // Force reactivity
+      // Update states with new objects
+      changeRateVisibility = newChangeRateVisibility;
+      shorelineVisibility = newShorelineVisibility;
     }
     
     function toggleBathymetry() {
@@ -128,6 +143,7 @@
         obj.visible = bathyVisibility;
       });
     }
+    
     function toggleTransect() {
       transectVisibility = !transectVisibility;
       transectObjects?.forEach(obj => {
@@ -136,179 +152,181 @@
     }
 
     function getIntervalLabel(interval) {
-      const groupIds = Object.keys(changeRatePolygons[interval] || {});
+      if (!changeRatePolygons || !changeRatePolygons[interval]) return `Interval ${interval}`;
+      
+      const groupIds = Object.keys(changeRatePolygons[interval]);
       if (groupIds.length > 0) {
         const firstGroup = changeRatePolygons[interval][groupIds[0]];
         return `${firstGroup.startYear}-${firstGroup.endYear}`;
       }
       return `Interval ${interval}`;
     }
-      // Calculate the proportional position of each year along the timeline
-  function getYearPosition(year) {
-    const minYear = Math.min(...years);
-    const maxYear = Math.max(...years);
-    return ((year - minYear) / (maxYear - minYear)) * 100;
-  }
-
-  </script>
-  
-  <div class="controls-container">
-    <div class="control-section">
-      <h2 class="annotated-title">
-        Historic Shorelines
-        <div class="annotation-box">Shorelines are calculated by eras</div>
-      </h2>
-      <div class="control-buttons">
-        {#each years || [] as year}
-          <button 
-            on:click={() => toggleShoreline(year)} 
-            class="control-button {shorelineVisibility[year] ? 'visible' : 'hidden'}">
-            <!-- style="left: {getYearPosition(year)}%;"> -->
-            {year}
-          </button>
-        {/each}
-      </div>
-    </div>
     
-    <div class="control-section">
-      <h2 class="annotated-title">
-        Intervals
-        <div class="annotation-box">Change rates are calculated from starting and ending shorelines</div>
-      </h2>
-      <div class="control-buttons">
-        {#each Object.keys(changeRateVisibility) as interval}
-          <button 
-            on:click={() => toggleChangeRate(interval)} 
-            class="control-button {changeRateVisibility[interval] ? 'visible' : 'hidden'}">
-            {getIntervalLabel(interval)}
-          </button>
-        {/each}
-      </div>
-    </div>
+    // Calculate the proportional position of each year along the timeline
+    function getYearPosition(year) {
+      if (!years || years.length === 0) return 0;
+      const minYear = Math.min(...years);
+      const maxYear = Math.max(...years);
+      return ((year - minYear) / (maxYear - minYear)) * 100;
+    }
+</script>
 
-    <!-- <div class="control-section">
-      <h2>Bathymetry</h2>
-      <div class="control-buttons">
+<div class="controls-container">
+  <div class="control-section">
+    <h2 class="annotated-title">
+      Historic Shorelines
+      <div class="annotation-box">Shorelines are calculated by eras</div>
+    </h2>
+    <div class="control-buttons">
+      {#each years || [] as year}
         <button 
-          on:click={toggleBathymetry} 
-          class="control-button {bathyVisibility ? 'visible' : 'hidden'}">
-          {bathyVisibility ? 'Hide' : 'Show'} Bathymetry
+          onclick={() => toggleShoreline(year)} 
+          class="control-button {shorelineVisibility[year] ? 'visible' : 'hidden'}">
+          {year}
         </button>
-      </div>
-    </div> -->
-
-    <div class="control-section">
-      <h2 class="annotated-title">
-        Segment transects
-        <div class="annotation-box">Shorelines are transected into segments 
-          for change rates calculation</div>
-      </h2>
-      <div class="control-buttons">
-        <button 
-          on:click={toggleTransect}
-          class="control-button {transectVisibility ? 'visible' : 'hidden'}"> 
-          {transectVisibility ? 'Hide' : 'Show'} Transect
-        </button>
-      </div>
+      {/each}
     </div>
   </div>
-  
-  <div class="instructions">
-    Click and drag to rotate the scene <br>
-    Left button: orbit <br>
-    Right button: pan <br>
+
+  <div class="control-section">
+    <h2 class="annotated-title">
+      Changing Land Area
+      <div class="annotation-box">Change rates are calculated from starting and ending shorelines</div>
+    </h2>
+    <div class="control-buttons">
+      {#each Object.keys(changeRatePolygons || {}) as interval}
+        <button 
+          onclick={() => toggleChangeRate(interval)} 
+          class="control-button {changeRateVisibility[interval] ? 'visible' : 'hidden'}">
+          {getIntervalLabel(interval)}
+        </button>
+      {/each}
+    </div>
   </div>
+
+  <!-- <div class="control-section">
+    <h2>Bathymetry</h2>
+    <div class="control-buttons">
+      <button 
+        on:click={toggleBathymetry} 
+        class="control-button {bathyVisibility ? 'visible' : 'hidden'}">
+        {bathyVisibility ? 'Hide' : 'Show'} Bathymetry
+      </button>
+    </div>
+  </div> -->
+
+  <div class="control-section">
+    <h2 class="annotated-title">
+      Segment transects
+      <div class="annotation-box">Shorelines are transected into segments 
+        for change rates calculation</div>
+    </h2>
+    <div class="control-buttons">
+      <button 
+        onclick={toggleTransect}
+        class="control-button {transectVisibility ? 'visible' : 'hidden'}"> 
+        {transectVisibility ? 'Hide' : 'Show'} Transect
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="instructions">
+  Click and drag to rotate the scene <br>
+  Left button: orbit <br>
+  Right button: pan <br>
+</div>
 
 <style>
-    .controls-container {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 10; /* Ensure the control is above the scene */
-      display: flex;
-      flex-direction: column;
-      background: rgba(0, 0, 0, 0.7);
-      color: white;
-      padding: 10px;
-      border-radius: 5px;
-      z-index: 100;
-      gap: 10px;
-    }
-    
-    .control-section {
-      display: flex;
-      flex-direction: row;
-      align-items: flex-start; /* Align items at the top */
-      gap: 10px;
-    }
-    
-    .control-section h2 {
-      margin: 0;
-      font-size: 16px;
-      width: 120px; /* Fixed width to align all headings */
-      text-align: left;
-    }
-    
-    .control-buttons {
-      display: flex;
-      flex-direction: row;
-      gap: 4px; /* Add spacing between buttons */
-    }
-    
-    .control-button {
-      padding: 6px 12px;
-      background: #444;
-      color: white;
-      border: none;
-      border-radius: 3px;
-      cursor: pointer;
-      transition: color 0.3s ease, background 0.3s ease;
-      text-align: left; 
-    }
-    
-    .control-button.visible {
-      color: white;
-      background: #333;
-    }
-    
-    .control-button.hidden {
-      color: rgba(255, 255, 255, 0.3);
-      background: #333; 
-    }
-    
-    .control-button:hover {
-      background: #666;
-    }
+  .controls-container {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10; /* Ensure the control is above the scene */
+    display: flex;
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 100;
+    gap: 10px;
+  }
+  
+  .control-section {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start; /* Align items at the top */
+    gap: 10px;
+  }
+  
+  .control-section h2 {
+    margin: 0;
+    font-size: 16px;
+    width: 120px; /* Fixed width to align all headings */
+    text-align: left;
+  }
+  
+  .control-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 4px; /* Add spacing between buttons */
+  }
+  
+  .control-button {
+    padding: 6px 12px;
+    background: #444;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: color 0.3s ease, background 0.3s ease;
+    text-align: left; 
+  }
+  
+  .control-button.visible {
+    color: white;
+    background: #333;
+  }
+  
+  .control-button.hidden {
+    color: rgba(255, 255, 255, 0.3);
+    background: #333; 
+  }
+  
+  .control-button:hover {
+    background: #666;
+  }
 
-    .annotated-title {
-      position: relative;
-      display: inline-block;
-    }
+  .annotated-title {
+    position: relative;
+    display: inline-block;
+  }
 
-    .annotated-title:hover .annotation-box {
-      display: block;
-    }
+  .annotated-title:hover .annotation-box {
+    display: block;
+  }
 
-    .annotation-box {
-      display: none;
-      position: absolute;
-      top: 0;
-      right: 105%; /* Position to the left of the container */
-      background: rgba(0, 0, 0, 0.5);
-      color: white;
-      padding: 5px 10px;
-      border-radius: 3px;
-      font-size: 16px;
-      white-space: nowrap;
-      z-index: 200;
-      margin-right: 10px; /* Add spacing between the box and the container */
-    }
+  .annotation-box {
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 105%; /* Position to the left of the container */
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 16px;
+    white-space: nowrap;
+    z-index: 200;
+    margin-right: 10px; /* Add spacing between the box and the container */
+  }
 
-    .instructions {
-      font-size: 14px;
-      color: rgba(0, 0, 0, 0.4);
-      position: absolute;
-      top: 10px;
-      left: 10px;
-    }
-  </style>
+  .instructions {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.4);
+    position: absolute;
+    top: 10px;
+    left: 10px;
+  }
+</style>

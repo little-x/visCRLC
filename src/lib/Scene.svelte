@@ -9,8 +9,8 @@
   import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
   import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
   import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
-  import {testGUI, addLabels} from './testGUI.js'; // Import the setupGUI function from Control.svelte
-  
+  import {testGUI} from './testGUI.js'; 
+  import {addLabels} from './Label.js';
   import Ui from './Ui.svelte';
   import ColorLegend from './ColorLegend.svelte';
   
@@ -336,10 +336,10 @@
   
   const addAllLabels = () => {
     addLabels(model,'Tokeland');
-      addLabels(model,'Westport');
-      addLabels(model,'North_Cove');
-      addLabels(model,'Grays_Harbor');
-      addLabels(model,'Willapa_Bay');
+    addLabels(model,'Westport');
+    addLabels(model,'North_Cove');
+    addLabels(model,'Grays_Harbor');
+    addLabels(model,'Willapa_Bay');
   };
   
   // Main initialization function
@@ -393,16 +393,6 @@
 </div>
 
 <style>
-  :global(.label) {
-    color: white;
-    background-color: rgba(0, 0, 0, 0.7);
-    padding: 2px 5px;
-    border-radius: 3px;
-    font-size: 14px;
-    pointer-events: none; /* Prevent labels from blocking mouse events */
-  }
-
-
   .scene3d {
     display: flex;
     flex-direction: column;
@@ -436,4 +426,49 @@
     border-radius: 5px;
     z-index: 20;
   }
+
+  :global(.label) {
+    color: white;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 14px;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  
+  :global(.annotation-box) {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 15px;
+    border-radius: 5px;
+    max-width: 300px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+  }
+  
+  :global(.annotation-box h3) {
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-size: 16px;
+  }
+  
+  :global(.annotation-box p) {
+    margin: 0;
+    font-size: 14px;
+  }
+  
+  :global(.close-button) {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 5px;
+  }
+
 </style>
