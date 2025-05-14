@@ -10,7 +10,7 @@
   import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
   import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
   import {testGUI} from './testGUI.js'; 
-  import {addLabels, locationLabels} from './label.js'; // Updated import
+  import {addLabels, locationLabels, addRateLabel} from './label.js'; // Updated import
   import Ui from './Ui.svelte';
   import ColorLegend from './ColorLegend.svelte';
   
@@ -18,6 +18,8 @@
   let scene, camera, renderer, controls, labelRenderer;
   let model, el, scene3d; // Reference to the .scene3d element
   const modelPath = import.meta.env.BASE_URL + '3d/GL.glb';
+  const sandTexturePath = import.meta.env.BASE_URL + 'img/sand.jpg';
+  let sandTexture; // Will hold the loaded texture
   const years = [1870, 1920, 1950, 2000, 2015]; // historic years
   let shorelines = {}; // store shoreline layers by year
   let shorelineSrf = {}; // Store references to shoreline surfaces
@@ -62,6 +64,13 @@
     labelRenderer.domElement.style.top = '0';
     labelRenderer.domElement.style.pointerEvents = 'none'; // Prevent labels from blocking mouse events
     scene3d.appendChild(labelRenderer.domElement);
+
+    // Load the sand texture
+    const textureLoader = new THREE.TextureLoader();
+    sandTexture = textureLoader.load(sandTexturePath);
+    sandTexture.wrapS = THREE.RepeatWrapping;
+    sandTexture.wrapT = THREE.RepeatWrapping;
+    sandTexture.repeat.set(5, 5); // Adjust the texture repeat as needed
 
     // Set up lighting
     lighting();
@@ -197,6 +206,16 @@
         } else {
           object.visible = false; // Default to hidden if year can't be determined
         }
+
+        if (object.material) {
+          // MeshBasicMaterial doesn't need light to be visible
+          object.material = new THREE.MeshBasicMaterial({
+            map: sandTexture
+            // transparent: true,
+            // opacity: 0.9,
+            // side: THREE.DoubleSide
+          });
+        }
       }
       
       if (object.name.includes("_bathy")) {
@@ -276,7 +295,7 @@
           const material = new THREE.MeshBasicMaterial({
             color: new THREE.Color(color),
             transparent: true,
-            opacity: 0.7,
+            opacity: .9,
             side: THREE.DoubleSide
           });
 
@@ -286,16 +305,22 @@
 
             // Store the change rate in the object's userData for tooltips/info
             polygonInfo.object.userData.changeRate = rate;
+            
+            // Create text label for the change rate value using the imported function
+            const rateText = addRateLabel(scene, polygonInfo.object, rate, colorScale);
+            
+            // Store the text object reference in the polygon info
+            changeRatePolygons[intervalNumber][groupId].rateText = rateText;
           }
         }
       });
     });
   };
-
+  
   // Set up scene lighting
   function lighting() {
     // Add a directional light
-    const mainLight = new THREE.DirectionalLight(0xffffff, 5); // White light, intensity 1
+    const mainLight = new THREE.DirectionalLight(0xffffff, 5); // White light, intensity 5
     mainLight.position.set(5, 5, 15); // Position the light
     scene.add(mainLight);
 
@@ -303,9 +328,11 @@
     secLight.position.set(15, 15, -10); // Position the light
     scene.add(secLight);
 
-    // Add ambient light for softer lighting
-    const ambientLight = new THREE.AmbientLight(0xFDF5E2, .5); // Soft white light
+    const ambientLight = new THREE.AmbientLight(0xFDF5E2, 1.0); // Increased intensity to 1.0
     scene.add(ambientLight);
+    
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x8d8d8d, .5);
+    scene.add(hemiLight);
   }
   
   // Center the camera on the model
@@ -561,4 +588,14 @@
     color: #ccc;
   }
 
+  :global(.rate-text) {
+    color: white;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 1px 3px; 
+    border-radius: 10px;
+    border: 1px solid rgba(123, 123, 123, 0.5);
+    font-size: 14px;
+    pointer-events: none;
+    font-weight: bold;
+  }
 </style>

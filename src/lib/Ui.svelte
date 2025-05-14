@@ -9,6 +9,7 @@
     let changeRateVisibility = $state({});
     let bathyVisibility = $state(true); // Track bathymetry visibility
     let transectVisibility = $state(false); // Track transect visibility
+    let rateNumbersVisibility = $state(false); // Track change rate numbers visibility
 
     $effect(() => {
       // Initialize visibility states when shorelines or changeRatePolygons change
@@ -114,8 +115,9 @@
           // Show the corresponding surface for the most recent year
           Object.keys(shorelineSrf).forEach(key => {
             const yearMatch = key.match(/^(\d+)/);
-            if (yearMatch && parseInt(yearMatch[1]) === mostRecentYear) {
-              shorelineSrf[key].visible = true;
+            if (yearMatch) {
+              const surfaceYear = parseInt(yearMatch[1]);
+              shorelineSrf[key].visible = surfaceYear === mostRecentYear;
             }
           });
           
@@ -142,6 +144,12 @@
         newChangeRateVisibility[i] = i === interval ? !isCurrentlyVisible : false;
         Object.keys(changeRatePolygons[i]).forEach(groupId => {
           changeRatePolygons[i][groupId].object.visible = i === interval ? !isCurrentlyVisible : false;
+          
+          // Toggle visibility of rate numbers based on both the interval visibility and rate numbers toggle
+          if(changeRatePolygons[i][groupId].rateText) {
+            changeRatePolygons[i][groupId].rateText.visible = 
+              i === interval ? !isCurrentlyVisible && rateNumbersVisibility : false;
+          }
         });
       });
 
@@ -208,6 +216,21 @@
       });
     }
 
+    function toggleRateNumbers() {
+      rateNumbersVisibility = !rateNumbersVisibility;
+      
+      // Only update numbers for the currently visible interval
+      Object.keys(changeRatePolygons || {}).forEach(interval => {
+        if (changeRateVisibility[interval]) {
+          Object.keys(changeRatePolygons[interval]).forEach(groupId => {
+            if (changeRatePolygons[interval][groupId].rateText) {
+              changeRatePolygons[interval][groupId].rateText.visible = rateNumbersVisibility;
+            }
+          });
+        }
+      });
+    }
+
     function getIntervalLabel(interval) {
       if (!changeRatePolygons || !changeRatePolygons[interval]) return `Interval ${interval}`;
       
@@ -258,6 +281,11 @@
           {getIntervalLabel(interval)}
         </button>
       {/each}
+      <button 
+        onclick={toggleRateNumbers}
+        class="control-button {rateNumbersVisibility ? 'visible' : 'hidden'}">
+        {rateNumbersVisibility ? 'Hide' : 'Show'} Rate Values
+      </button>
     </div>
   </div>
 
@@ -302,7 +330,7 @@
     z-index: 10; /* Ensure the control is above the scene */
     display: flex;
     flex-direction: column;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.4);
     color: white;
     padding: 10px;
     border-radius: 5px;

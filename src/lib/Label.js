@@ -1,5 +1,6 @@
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import * as THREE from 'three';
+import * as d3 from 'd3';
 
 // Define all labels in a structured array for better organization
 export const locationLabels = [
@@ -94,6 +95,58 @@ export const addLabels = (model, name, description = '', imageUrl = '', type = 1
     model.add(label);
   }    
 };
+
+// Function to add change rate label to polygons with appropriate color styling
+export const addRateLabel = (scene, object, rate, colorScale) => {
+  // Get the center of the object for text placement
+  const boundingBox = new THREE.Box3().setFromObject(object);
+  const center = new THREE.Vector3();
+  boundingBox.getCenter(center);
+  
+  // Round the rate to 2 decimal places
+  const formattedRate = parseFloat(rate).toFixed(2);
+  
+  // Get the color for this rate from the color scale
+  const color = colorScale(rate);
+  
+  // Create the text div element
+  const textDiv = document.createElement('div');
+  textDiv.textContent = formattedRate;
+  textDiv.className = 'rate-text';
+  
+  // Extract RGB components from the color
+  const d3Color = color.rgb ? color : d3.color(color);
+  const rgbaColor = `rgba(${d3Color.r}, ${d3Color.g}, ${d3Color.b}, 0.9)`;
+  textDiv.style.backgroundColor = rgbaColor;
+  
+  // Use contrasting text color based on background brightness
+  const brightness = (d3Color.r * 299 + d3Color.g * 587 + d3Color.b * 114) / 1000;
+  textDiv.style.color = brightness > 128 ? 'black' : 'white';
+  
+  // Create the label object and position it
+  const textLabel = new CSS2DObject(textDiv);
+  textLabel.position.copy(center);
+  textLabel.position.y += 5; // Adjust height above the polygon
+  
+  // Initially hide the text
+  textLabel.visible = false;
+  
+  // Add to scene
+  scene.add(textLabel);
+  
+  return textLabel;
+};
+
+// Add style for rate-text to the exported constants
+export const rateTextStyle = `
+  .rate-text {
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 14px;
+    pointer-events: none;
+    font-weight: bold;
+  }
+`;
 
 // Function to show annotation when a label is clicked
 function showAnnotation(event) {
