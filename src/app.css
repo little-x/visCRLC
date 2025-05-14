@@ -20,6 +20,11 @@ header {
   font-size: calc(8px + 1vmin);
   color: rgb(45, 45, 45);
 }
+/* @media (prefers-color-scheme: dark) {
+  header {
+    color: #e7e7e7;
+  }
+} */
 
 a {
   font-weight: 500;

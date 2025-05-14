@@ -10,7 +10,7 @@
   import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
   import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
   import {testGUI} from './testGUI.js'; 
-  import {addLabels} from './label.js';
+  import {addLabels, locationLabels} from './label.js'; // Updated import
   import Ui from './Ui.svelte';
   import ColorLegend from './ColorLegend.svelte';
   
@@ -161,7 +161,7 @@
 
     // Traverse the shoreline parent to find shoreline layers
     model.traverse((object) => {
-      if (object.isMesh || object.isGroup || object.isLine) {
+      if (object.isLine) {
         // Look for year identifiers in the object name
         years.forEach((year) => {
           if (object.name.startsWith(year.toString())) {
@@ -173,21 +173,15 @@
                 color: new THREE.Color(shorelineColorScale(year)),
                 transparent: true,
                 opacity: 1,
+                depthTest: false
               });
             }
 
             // Initially make all shoreline objects visible
-            object.visible = true;
+            object.visible = true;        
+            object.renderOrder = 100;
           }
         });
-      }
-
-      // Find all shoreline curve and set them to be highest render order
-      if (object.name.includes("_shoreline")) {
-        object.renderOrder = 100;
-        if (object.material) {
-          object.material.depthTest = false;
-        }
       }
       
       // Handle shoreline surfaces - only show the oldest year's surface
@@ -350,12 +344,35 @@
     labelRenderer.render(scene, camera); // Render labels
   };
   
+  // Add all labels more efficiently using the array
   const addAllLabels = () => {
-    addLabels(model,'Tokeland');
-    addLabels(model,'Westport');
-    addLabels(model,'North_Cove');
-    addLabels(model,'Grays_Harbor');
-    addLabels(model,'Willapa_Bay');
+    locationLabels.forEach(location => {
+      addLabels(
+        model,
+        location.name,
+        location.description || `Information about ${location.name.replace(/_/g, ' ')}`,
+        location.imageUrl || '',
+        location.type || 1 // Default to type 1 if not specified
+      );
+    });
+  };
+
+  // Function to set up document click handler for closing annotations
+  const setupDocumentClickHandler = () => {
+    document.addEventListener('click', (event) => {
+      const annotationBox = document.querySelector('.annotation-box');
+      // Only proceed if there's an open annotation
+      if (annotationBox) {
+        // Check if the click was outside both the annotation and any label
+        const clickedOnAnnotation = annotationBox.contains(event.target);
+        const clickedOnLabel = event.target.closest('.label');
+        
+        // If clicked outside both annotation and labels, close the annotation
+        if (!clickedOnAnnotation && !clickedOnLabel) {
+          annotationBox.remove();
+        }
+      }
+    });
   };
   
   // Main initialization function
@@ -372,6 +389,7 @@
       applyChangeRateColors(); // Apply colors based on change rates
       // testGUI(camera, shorelines, years, changeRatePolygons, model); // Set up GUI controls
       addAllLabels(); // Add labels to the model
+      setupDocumentClickHandler(); // Set up handler to close annotations when clicking elsewhere
       isLoading = false; // Set loading to false after everything is ready
       animate(); // Start animation loop
     } catch (error) {
@@ -401,7 +419,8 @@
     <canvas class="scene-canvas" bind:this={el}></canvas>
   </div>
   <div class="control">
-    <Ui {years} {shorelines} {changeRatePolygons} {chgRate} {bathymetryObjects} {transectObjects}/>
+    <Ui {years} {shorelines} {shorelineSrf} {changeRatePolygons} 
+      {chgRate} {bathymetryObjects} {transectObjects}/>
   </div>
   <div class="key">
     <ColorLegend />
@@ -453,8 +472,36 @@
     cursor: pointer;
   }
   
+  :global(.label-type-1) {
+    /* Standard label - using the default styles */
+  }
+  
+  :global(.label-type-2) {
+    /* Small dot that reveals text on hover */
+    font-size: 0;  /* Hide text initially */
+    background-color: rgba(150, 150, 150, 0.8);
+    border: 5px solid rgba(0, 0, 0, 0.5);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    padding: 0;
+  }
+  
+  :global(.label-type-2:hover) {
+    /* Show text when hovering */
+    font-size: 12px;
+    width: auto;
+    height: auto;
+    border-radius: 3px;
+    padding: 2px 5px;
+    border: 0px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: rgba(255, 255, 255, 0.9);
+  }
+  
   :global(.annotation-box) {
     position: absolute;
+    right: 10px;
     background: rgba(0, 0, 0, 0.85);
     color: white;
     padding: 15px;
@@ -485,6 +532,33 @@
     font-size: 18px;
     cursor: pointer;
     padding: 0 5px;
+  }
+  
+  :global(.annotation-image-container) {
+    width: 100%;
+    margin: 10px 0;
+    display: flex;
+    justify-content: center;
+  }
+  
+  :global(.annotation-image) {
+    max-width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: 3px;
+  }
+  
+  :global(.annotation-image-placeholder) {
+    background-color: rgba(100, 100, 100, 0.3);
+    height: 100px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 10px 0;
+    border-radius: 3px;
+    font-style: italic;
+    color: #ccc;
   }
 
 </style>

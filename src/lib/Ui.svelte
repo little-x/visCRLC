@@ -1,7 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     
-    let {shorelines, changeRatePolygons, years, 
+    let {shorelines, shorelineSrf, changeRatePolygons, years, 
       chgRate, bathymetryObjects, transectObjects} = $props();
 
     // Store visibility of shoreline years and change rate intervals
@@ -77,15 +77,11 @@
       const newVisibility = { ...shorelineVisibility };
       newVisibility[year] = !newVisibility[year];
       
-      // Update the actual objects
+      // Update the shoreline objects visibility
       shorelines[year].forEach(item => {
-        // For regular shoreline objects (not surfaces), just toggle visibility
-        if (!item.name.includes("_srf")) {
-          item.visible = newVisibility[year];
-        }
+        item.visible = newVisibility[year];
       });
       
-      // For surfaces (_srf), ensure only the most recent visible year has its surface shown
       // Get all currently visible years (including the one we just toggled)
       const visibleYears = Object.entries(newVisibility)
         .filter(([_, isVisible]) => isVisible)
@@ -96,14 +92,13 @@
         const mostRecentYear = Math.max(...visibleYears);
         
         // Update all shoreline surfaces
-        years.forEach(yr => {
-          if (shorelines[yr]) {
-            shorelines[yr].forEach(item => {
-              if (item.name.includes("_srf")) {
-                // Only show the surface for the most recent visible year
-                item.visible = parseInt(yr) === mostRecentYear && newVisibility[yr];
-              }
-            });
+        Object.keys(shorelineSrf).forEach(key => {
+          // Extract year from the object name (assuming format: "YYYY_srf...")
+          const yearMatch = key.match(/^(\d+)/);
+          if (yearMatch) {
+            const surfaceYear = parseInt(yearMatch[1]);
+            // Only show the surface for the most recent visible year
+            shorelineSrf[key].visible = surfaceYear === mostRecentYear && newVisibility[surfaceYear];
           }
         });
       } else {
@@ -114,6 +109,14 @@
         if (shorelines[mostRecentYear]) {
           shorelines[mostRecentYear].forEach(item => {
             item.visible = true;
+          });
+          
+          // Show the corresponding surface for the most recent year
+          Object.keys(shorelineSrf).forEach(key => {
+            const yearMatch = key.match(/^(\d+)/);
+            if (yearMatch && parseInt(yearMatch[1]) === mostRecentYear) {
+              shorelineSrf[key].visible = true;
+            }
           });
           
           // Update visibility state
@@ -144,12 +147,7 @@
 
       // If toggling off, show all shorelines that were previously visible
       if (isCurrentlyVisible) {
-        years.forEach(year => {
-          // Keep existing visibility - don't change shorelines
-          if (shorelines[year]) {
-            // Don't modify shorelines visibility when turning off an interval
-          }
-        });
+        // No changes to shoreline visibility when turning off an interval
       } else {
         // Turning on an interval - update shoreline visibility based on interval
         const groupIds = Object.keys(changeRatePolygons[interval] || {});
@@ -157,6 +155,9 @@
           const firstGroup = changeRatePolygons[interval][groupIds[0]];
           const startYear = firstGroup.startYear;
           const endYear = firstGroup.endYear;
+
+          // Track the most recent visible year to show its surface
+          let mostRecentVisibleYear = null;
 
           years.forEach(year => {
             const shouldBeVisible = year >= startYear && year <= endYear;
@@ -167,7 +168,24 @@
                 item.visible = shouldBeVisible;
               });
             }
+
+            if (shouldBeVisible) {
+              if (mostRecentVisibleYear === null || year > mostRecentVisibleYear) {
+                mostRecentVisibleYear = year;
+              }
+            }
           });
+
+          // Update surface visibility for the most recent visible year
+          if (mostRecentVisibleYear !== null) {
+            Object.keys(shorelineSrf).forEach(key => {
+              const yearMatch = key.match(/^(\d+)/);
+              if (yearMatch) {
+                const surfaceYear = parseInt(yearMatch[1]);
+                shorelineSrf[key].visible = surfaceYear === mostRecentVisibleYear;
+              }
+            });
+          }
         }
       }
 
@@ -230,7 +248,7 @@
   <div class="control-section">
     <h2 class="annotated-title">
       Changing Land Area
-      <div class="annotation-box">Change rates are calculated from starting and ending shorelines</div>
+      <div class="annotation-box">Change rates are calculated for intervals</div>
     </h2>
     <div class="control-buttons">
       {#each Object.keys(changeRatePolygons || {}) as interval}
@@ -257,7 +275,7 @@
   <div class="control-section">
     <h2 class="annotated-title">
       Segment transects
-      <div class="annotation-box">Shorelines are transected into segments 
+      <div class="annotation-box">Shorelines are transected into segments <br>
         for change rates calculation</div>
     </h2>
     <div class="control-buttons">
@@ -351,7 +369,7 @@
     position: absolute;
     top: 0;
     right: 105%; /* Position to the left of the container */
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.7);
     color: white;
     padding: 5px 10px;
     border-radius: 3px;
@@ -363,7 +381,7 @@
 
   .instructions {
     font-size: 14px;
-    color: rgba(0, 0, 0, 0.4);
+    color: rgba(127, 127, 127);
     position: absolute;
     top: 10px;
     left: 10px;
