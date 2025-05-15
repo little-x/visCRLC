@@ -37,19 +37,31 @@ export const locationLabels = [
   {
     name: 'Lighthouse',
     description: 'Lost in 1940.',
-    imageUrl: import.meta.env.BASE_URL + 'img/lighthouse.jpg',
-    type: 2  
+    imageUrl:'img/lighthouse.jpg',
+    type: 3  
   },
   {
     name: 'Old_Pioneer_Cemetery',
     description: '',
     imageUrl: '',
-    type: 2  
+    type: 3  
   },
   {
     name: 'Hotel_Norwood',
     description: '',
     imageUrl: '',
+    type: 3  
+  },
+  {
+    name: 'Tide_Gate',
+    description: '',
+    imageUrl: 'img/tidegates.jpg',
+    type: 2  
+  },
+  {
+    name: 'Hard_Armoring',
+    description: '',
+    imageUrl: 'img/ha.jpg',
     type: 2  
   }
 ];
@@ -62,7 +74,8 @@ export const addLabels = (model, name, description = '', imageUrl = '', type = 1
   
   // Find all objects with matching name and expand the bounding box
   model.traverse((object) => {
-    if ((object.isLine || object.isMesh) && object.name.includes(name)) {      foundMatchingObject = true;
+    if ((object.isLine || object.isMesh) && object.name.includes(name)) {      
+      foundMatchingObject = true;
       const objectBox = new THREE.Box3().setFromObject(object);
       combinedBox.union(objectBox); // Use union to combine bounding boxes
     }
@@ -78,6 +91,15 @@ export const addLabels = (model, name, description = '', imageUrl = '', type = 1
     lbDiv.classList.add('label');
     // Add a class based on the label type
     lbDiv.classList.add(`label-type-${type}`);
+    
+    // Add mouse events for type 2 and type 3 labels
+    if (type === 2 || type === 3) {
+      lbDiv.classList.add('sub-label');
+      lbDiv.classList.add(`sub-label-type${type}`);
+      lbDiv.addEventListener('mouseenter', () => showHideSameTypeLabels(type, true));
+      lbDiv.addEventListener('mouseleave', () => showHideSameTypeLabels(type, false));
+    }
+    
     lbDiv.textContent = name.replace(/_/g, ' '); // Replace underscores with spaces
     lbDiv.setAttribute('data-name', name);
     lbDiv.setAttribute('data-description', description || `Information about ${name}`);
@@ -95,6 +117,30 @@ export const addLabels = (model, name, description = '', imageUrl = '', type = 1
     model.add(label);
   }    
 };
+
+// Combined function to show/hide labels of the same type
+function showHideSameTypeLabels(type, show) {
+  if (show) {
+    // Show all labels of the same type
+    const typeLabels = document.querySelectorAll(`.sub-label-type${type}`);
+    typeLabels.forEach(label => {
+      label.classList.add('hover-active');
+    });
+  } else {
+    // Hide all labels of the same type after a delay (to prevent flicker)
+    setTimeout(() => {
+      // Check if any label of this type still has hover
+      const isAnyHovered = Array.from(document.querySelectorAll(`.sub-label-type${type}:hover`)).length > 0;
+      
+      if (!isAnyHovered) {
+        const typeLabels = document.querySelectorAll(`.sub-label-type${type}`);
+        typeLabels.forEach(label => {
+          label.classList.remove('hover-active');
+        });
+      }
+    }, 50);
+  }
+}
 
 // Function to add change rate label to polygons with appropriate color styling
 export const addRateLabel = (scene, object, rate, colorScale) => {
@@ -128,8 +174,8 @@ export const addRateLabel = (scene, object, rate, colorScale) => {
   textLabel.position.copy(center);
   textLabel.position.y += 5; // Adjust height above the polygon
   
-  // Initially hide the text
-  textLabel.visible = false;
+  // Set initial visibility to match the polygon's visibility
+  textLabel.visible = object.visible;
   
   // Add to scene
   scene.add(textLabel);

@@ -225,6 +225,25 @@
         transectObjects.push(object);
         object.visible = false;
       }
+      if (object.name.includes("road")) {
+        if (object.material) {
+          object.material = new THREE.LineBasicMaterial({
+              color: new THREE.Color(0xffffff),
+              linewidth: 3, // Increased line width (note: may not work in all browsers)
+              depthTest: false
+            });
+        }
+      }
+      if (object.name.includes("ditch")) {
+        if (object.material) {
+          object.material = new THREE.LineBasicMaterial({
+              color: new THREE.Color(0x364e85),
+              linewidth: 3, // Increased line width (note: may not work in all browsers)
+              depthTest: false
+            });
+        }
+      }
+
     });
   };
 
@@ -268,7 +287,6 @@
           
           // Show only the first interval by default
           object.visible = parseInt(intervalNumber) === 2;  // Show only the first interval by default
-          // object.visible = true; // Set all layers to be visible for now
           }
       }
     });
@@ -296,7 +314,8 @@
             color: new THREE.Color(color),
             transparent: true,
             opacity: .9,
-            side: THREE.DoubleSide
+            side: THREE.DoubleSide,
+            depthTest: false
           });
 
           // Apply to the polygon
@@ -328,9 +347,6 @@
     secLight.position.set(15, 15, -10); // Position the light
     scene.add(secLight);
 
-    const ambientLight = new THREE.AmbientLight(0xFDF5E2, 1.0); // Increased intensity to 1.0
-    scene.add(ambientLight);
-    
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x8d8d8d, .5);
     scene.add(hemiLight);
   }
@@ -344,7 +360,7 @@
     camera.position.set(center.x - 2000, center.y + 3000, center.z + 3000); // Adjust camera position based on model size
     camera.lookAt(center);
     camera.near = .1;
-    camera.far = 1000;
+    camera.far = 9000;
     console.log('Model center:', center);
   };
 
@@ -503,29 +519,39 @@
     /* Standard label - using the default styles */
   }
   
-  :global(.label-type-2) {
-    /* Small dot that reveals text on hover */
+  :global(.sub-label) {
+    /* Common styles for sub-labels (type 2 and 3) */
     font-size: 0;  /* Hide text initially */
-    background-color: rgba(150, 150, 150, 0.8);
-    border: 5px solid rgba(0, 0, 0, 0.5);
     width: 8px;
     height: 8px;
     border-radius: 50%;
     padding: 0;
   }
   
-  :global(.label-type-2:hover) {
-    /* Show text when hovering */
+  :global(.label-type-2) {
+    /* Type 2 specific styles */
+    background-color: rgba(150, 150, 150, 0.8);
+    border: 5px solid rgba(0, 0, 0, 0.5);
+  }
+
+  :global(.label-type-3) {
+    /* Type 3 specific styles */
+    background-color: rgba(150, 150, 150, 0.8);
+    border: 2px solid rgba(0, 0, 0, 0.5);
+  }
+
+  :global(.sub-label:hover), :global(.sub-label.hover-active) {
+    /* Show text when hovering or when any sub-label is active */
     font-size: 12px;
     width: auto;
     height: auto;
     border-radius: 3px;
     padding: 2px 5px;
     border: 0px;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.5);
     color: rgba(255, 255, 255, 0.9);
   }
-  
+
   :global(.annotation-box) {
     position: absolute;
     right: 10px;

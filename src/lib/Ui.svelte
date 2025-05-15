@@ -9,7 +9,7 @@
     let changeRateVisibility = $state({});
     let bathyVisibility = $state(true); // Track bathymetry visibility
     let transectVisibility = $state(false); // Track transect visibility
-    let rateNumbersVisibility = $state(false); // Track change rate numbers visibility
+    let rateNumbersVisibility = $state(true); // Track change rate numbers visibility
 
     $effect(() => {
       // Initialize visibility states when shorelines or changeRatePolygons change

@@ -17,6 +17,13 @@
   export let width = 240;
   export let height = 80;
 
+  // Props for Label Type Legend
+  export let showLabelLegend = true;
+  export let labelTypes = [
+    { type: 2, label: "Infrastructure", class: "label-type-2" },
+    { type: 3, label: "Historic Sites", class: "label-type-3" }
+  ];
+
   let bathymetrySvgElement;
   let changeRateSvgElement;
 
@@ -137,13 +144,24 @@
     <div class="no-data-color"></div>
     <span>No Data</span>
   </div>
+  
+  {#if showLabelLegend}
+    <div class="label-legend">
+      {#each labelTypes as item}
+        <div class="label-legend-item">
+          <div class="label-symbol {item.class}"></div>
+          <span>{item.label}</span>
+        </div>
+      {/each}
+    </div>
+  {/if}
 </div>
 
 <style>
   .legend {
     display: flex;
-    flex-direction: row;
-    gap: 20px;
+    flex-direction: column;
+    gap: 10px;
     position: absolute;
     bottom: 10px;
     right: 10px;
@@ -170,5 +188,38 @@
     height: 15px;
     background-color: #bec4c1;
     border: 1px solid #000;
+  }
+
+  /* Label legend styles */
+  .label-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 10px;
+    border-top: 1px solid rgba(0, 0, 0, 0.2);
+    padding-top: 10px;
+  }
+
+  .label-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .label-symbol {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .label-symbol.label-type-2 {
+    background-color: rgba(150, 150, 150, 0.8);
+    border: 5px solid rgba(0, 0, 0, 0.5);
+  }
+
+  .label-symbol.label-type-3 {
+    background-color: rgba(150, 150, 150, 0.8);
+    border: 2px solid rgba(0, 0, 0, 0.5);
   }
 </style>
