@@ -1,14 +1,15 @@
 <script>
     import { onMount } from 'svelte';
-    
+    import * as THREE from 'three';
     let {shorelines, shorelineSrf, changeRatePolygons, years, 
-      chgRate, bathymetryObjects, transectObjects} = $props();
+      chgRate, bathymetryObjects, transectObjects, parcelObjects, shorelineColorScale} = $props();
 
     // Store visibility of shoreline years and change rate intervals
     let shorelineVisibility = $state({});
     let changeRateVisibility = $state({});
     let bathyVisibility = $state(true); // Track bathymetry visibility
     let transectVisibility = $state(false); // Track transect visibility
+    let parcelVisibility = $state(false); // Track parcel visibility
     let rateNumbersVisibility = $state(true); // Track change rate numbers visibility
 
     $effect(() => {
@@ -215,6 +216,13 @@
         obj.visible = transectVisibility;
       });
     }
+    
+    function toggleParcels() {
+      parcelVisibility = !parcelVisibility;
+      parcelObjects?.forEach(obj => {
+        obj.visible = parcelVisibility;
+      });
+    }
 
     function toggleRateNumbers() {
       rateNumbersVisibility = !rateNumbersVisibility;
@@ -249,6 +257,27 @@
       const maxYear = Math.max(...years);
       return ((year - minYear) / (maxYear - minYear)) * 100;
     }
+
+    function getShorelineButtonStyle(year) {
+      if (shorelineVisibility[year]) {
+        // Use shorelineColorScale for visible buttons
+        return `background-color: ${shorelineColorScale(year)}; color: ${getContrastColor(shorelineColorScale(year))};`;
+      }
+      return ''; // Default style for hidden buttons
+    }
+    
+    // Helper function to determine if text should be black or white based on background color
+    function getContrastColor(colorValue) {
+      // Convert the color to RGB
+      const color = new THREE.Color(colorValue);
+      const r = color.r, g = color.g, b = color.b;
+      
+      // Calculate luminance - standard formula for perceived brightness
+      const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+      
+      // Return black for light backgrounds, white for dark backgrounds
+      return luminance > 0.4 ? '#000' : '#fff';
+    }
 </script>
 
 <div class="controls-container">
@@ -261,7 +290,8 @@
       {#each years || [] as year}
         <button 
           onclick={() => toggleShoreline(year)} 
-          class="control-button {shorelineVisibility[year] ? 'visible' : 'hidden'}">
+          class="control-button shoreline-button {shorelineVisibility[year] ? 'visible' : 'hidden'}"
+          style={getShorelineButtonStyle(year)}>
           {year}
         </button>
       {/each}
@@ -270,7 +300,7 @@
 
   <div class="control-section">
     <h2 class="annotated-title">
-      Changing Land Area
+      Change in Land Area
       <div class="annotation-box">Change rates are calculated for intervals</div>
     </h2>
     <div class="control-buttons">
@@ -302,18 +332,24 @@
 
   <div class="control-section">
     <h2 class="annotated-title">
-      Segment transects
-      <div class="annotation-box">Shorelines are transected into segments <br>
-        for change rates calculation</div>
+      Visibility toggle
     </h2>
     <div class="control-buttons">
       <button 
         onclick={toggleTransect}
-        class="control-button {transectVisibility ? 'visible' : 'hidden'}"> 
+        class="control-button button-with-annotation {transectVisibility ? 'visible' : 'hidden'}"> 
         {transectVisibility ? 'Hide' : 'Show'} Transect
+        <div class="button-annotation-box">Shorelines are transected into segments <br>
+          for change rates calculation</div>
+      </button>
+      <button 
+        onclick={toggleParcels}
+        class="control-button {parcelVisibility ? 'visible' : 'hidden'}"> 
+        {parcelVisibility ? 'Hide' : 'Show'} Parcels
       </button>
     </div>
   </div>
+  
 </div>
 
 <div class="instructions">
@@ -345,10 +381,10 @@
     gap: 10px;
   }
   
-  .control-section h2 {
+  .annotated-title {
     margin: 0;
     font-size: 16px;
-    width: 120px; /* Fixed width to align all headings */
+    width: 120px; 
     text-align: left;
   }
   
@@ -405,6 +441,29 @@
     white-space: nowrap;
     z-index: 200;
     margin-right: 10px; /* Add spacing between the box and the container */
+  }
+
+  .button-with-annotation {
+    position: relative;
+  }
+
+  .button-with-annotation:hover .button-annotation-box {
+    display: block;
+  }
+
+  .button-annotation-box {
+    display: none;
+    position: absolute;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 14px;
+    white-space: nowrap;
+    z-index: 200;
+    margin-right: 10px;
+    width: max-content;
+    top: 105%;
   }
 
   .instructions {

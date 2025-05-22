@@ -12,7 +12,7 @@
   import {testGUI} from './testGUI.js'; 
   import {addLabels, locationLabels, addRateLabel} from './label.js'; // Updated import
   import Ui from './Ui.svelte';
-  import ColorLegend from './ColorLegend.svelte';
+  import Legend from './Legend.svelte';
   
   // Scene setup variables
   let scene, camera, renderer, controls, labelRenderer;
@@ -27,12 +27,13 @@
   let changeRatePolygons = {}; // Store references
   let bathymetryObjects = [];
   let transectObjects = []; 
+  let parcelObjects = []; // Add array to store parcel objects
 
   // Red for erosion (negative values), blue for accretion (positive values)
   const colorScale = d3.scaleSequential(d3.interpolateRdYlBu).domain([-50, 50]);
 
   // Gradient color scale for shoreline years
-  const shorelineColorScale = d3.scaleSequential(d3.interpolateRgb("gray", "black"))
+  const shorelineColorScale = d3.scaleSequential(d3.interpolateRgb("white", "black"))
     .domain([Math.min(...years), Math.max(...years)]);
 
   let isLoading = true; // Track loading state
@@ -159,6 +160,7 @@
     shorelines = {};
     bathymetryObjects = []; // Reset bathymetry objects
     transectObjects = []; // Reset transect objects
+    parcelObjects = []; // Reset parcel objects
 
     // Initialize with empty arrays for each year
     years.forEach((year) => {
@@ -225,25 +227,38 @@
         transectObjects.push(object);
         object.visible = false;
       }
-      if (object.name.includes("road")) {
-        if (object.material) {
-          object.material = new THREE.LineBasicMaterial({
-              color: new THREE.Color(0xffffff),
-              linewidth: 3, // Increased line width (note: may not work in all browsers)
-              depthTest: false
-            });
-        }
-      }
       if (object.name.includes("ditch")) {
         if (object.material) {
           object.material = new THREE.LineBasicMaterial({
               color: new THREE.Color(0x364e85),
-              linewidth: 3, // Increased line width (note: may not work in all browsers)
-              depthTest: false
+              linewidth: 2, 
+              depthTest: false,
             });
+          object.renderOrder = 101;
         }
       }
-
+      if (object.name.includes("road")) {
+        if (object.material) {
+          object.material = new THREE.LineBasicMaterial({
+              color: new THREE.Color(0xdddddd),
+              linewidth: 4, // Increased line width
+              depthTest: false
+            });
+          object.renderOrder = 100; 
+        }
+      }
+      if (object.name.includes("parcel")) {
+        if (object.material) {
+          object.material = new THREE.LineBasicMaterial({
+              color: new THREE.Color(0xeeeeee),
+              linewidth: .1, 
+              depthTest: false,
+            });
+          object.renderOrder = 101;
+        }
+        parcelObjects.push(object); // Store parcel objects
+        object.visible = false; // Initially hide parcels
+      }
     });
   };
 
@@ -463,10 +478,10 @@
   </div>
   <div class="control">
     <Ui {years} {shorelines} {shorelineSrf} {changeRatePolygons} 
-      {chgRate} {bathymetryObjects} {transectObjects}/>
+      {chgRate} {bathymetryObjects} {transectObjects} {parcelObjects} {shorelineColorScale}/>
   </div>
   <div class="key">
-    <ColorLegend />
+    <Legend />
   </div>
 </div>
 
@@ -522,22 +537,22 @@
   :global(.sub-label) {
     /* Common styles for sub-labels (type 2 and 3) */
     font-size: 0;  /* Hide text initially */
-    width: 8px;
-    height: 8px;
     border-radius: 50%;
     padding: 0;
   }
   
   :global(.label-type-2) {
-    /* Type 2 specific styles */
-    background-color: rgba(150, 150, 150, 0.8);
-    border: 5px solid rgba(0, 0, 0, 0.5);
+    width: 12px;
+    height: 12px;
+    background-color: rgba(82, 186, 227, 0.8);
+    border: 2px solid rgba(255, 255, 255);
   }
 
   :global(.label-type-3) {
-    /* Type 3 specific styles */
-    background-color: rgba(150, 150, 150, 0.8);
-    border: 2px solid rgba(0, 0, 0, 0.5);
+    width: 10px;
+    height: 10px;
+    background-color: rgba(181, 209, 214, 0.8);
+    border: 2px solid rgba(255, 255, 255);
   }
 
   :global(.sub-label:hover), :global(.sub-label.hover-active) {

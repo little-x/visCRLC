@@ -63,6 +63,24 @@ export const locationLabels = [
     description: '',
     imageUrl: 'img/ha.jpg',
     type: 2  
+  },
+  {
+    name: 'Tokeland_Hotel',
+    description: '',
+    imageUrl: 'img/tlh.jpg',
+    type: 2  
+  },
+  {
+    name: 'Tokeland_Marina',
+    description: '',
+    imageUrl: '',
+    type: 2  
+  },
+  {
+    name: 'Old_Stage_House',
+    description: '',
+    imageUrl: '',
+    type: 2  
   }
 ];
 
