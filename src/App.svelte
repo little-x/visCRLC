@@ -120,6 +120,12 @@
         <p>
           Special thanks to Washington Department of Ecology for providing the data of historic shorelines and change rates.
         </p>
+        <p>
+          The source code of this site can be found at 
+          <a href="https://github.com/little-x/visCRLC" target="_blank">
+            GitHub Repository: visCRLC
+          </a>
+        </p>
         
         <!-- CRLC Images Gallery -->
         {#if crlcImages.length > 0}
@@ -140,9 +146,10 @@
       </div>
       <div class="other">
         <h2>Other Resources</h2>
-        <li>
-          <a href="https://figshare.com/articles/figure/North_Willapa_Bay_Shoreline_Erosion_and_Dune_Restoration_Graphics/28281572/1?file=52014599" target="_blank">North Willapa Bay Shoreline Erosion and Dune Restoration Graphics</a>
-        </li>
+        <p>
+          <a href="https://figshare.com/articles/figure/North_Willapa_Bay_Shoreline_Erosion_and_Dune_Restoration_Graphics/28281572/1?file=52014599" target="_blank">
+            North Willapa Bay Shoreline Erosion and Dune Restoration Graphics (Balderas Guzmán et al. 2025)</a>
+        </p>
         
         <!-- Willapa Bay Images Gallery -->
         <div class="image-gallery">
